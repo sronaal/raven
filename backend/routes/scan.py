@@ -16,6 +16,7 @@ from services.parameter_analyzer import analyze_parameters
 from services.scan_store import save_scan
 from services.ws_manager import manager
 from services.redirect_analyzer import analyze_redirect_chain
+from services.subdomain_enum import enumerate_subdomains
 from config.settings import BASE_DIR, RATE_LIMIT
 from routes.models import ScanRequest
 
@@ -354,3 +355,23 @@ async def scan_redirects(request: Request):
 
     result = await analyze_redirect_chain(url)
     return {"url": url, "timestamp": datetime.now(timezone.utc).isoformat(), **result}
+
+
+@router.post("/scan/subdomains")
+@limiter.limit(RATE_LIMIT)
+async def scan_subdomains(request: Request):
+    body = await request.json()
+    url = body.get("url", "")
+    if not url:
+        raise HTTPException(status_code=400, detail="URL is required")
+
+    parsed = urlparse(url)
+    hostname = parsed.hostname or url
+    if hostname.startswith("www."):
+        hostname = hostname[4:]
+
+    client_ip_str = request.client.host if request.client else ""
+    logger.info({"event": "subdomain_enum", "domain": hostname, "client_ip": client_ip_str})
+
+    result = await enumerate_subdomains(hostname)
+    return {"domain": hostname, "timestamp": datetime.now(timezone.utc).isoformat(), **result}
