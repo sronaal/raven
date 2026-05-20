@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { Shield, AlertTriangle, Lock, Search, History } from 'lucide-react'
+import { Shield, AlertTriangle, Lock, Search, History, LayoutDashboard } from 'lucide-react'
 import URLInput from './components/URLInput'
 import Disclaimer from './components/Disclaimer'
 import ProgressBar from './components/ProgressBar'
 import ResultsTabs from './components/ResultsTabs'
+import HistoryPage from './components/HistoryPage'
 import { scanFull, scanLevel } from './utils/api'
 
 const MAX_HISTORY = 10
@@ -24,6 +25,7 @@ function App() {
       return []
     }
   })
+  const [page, setPage] = useState('scanner')
 
   const handleScan = async (scanUrl, level = 'full') => {
     setLoading(true)
@@ -95,58 +97,74 @@ function App() {
                 <span className="text-sm">{scanHistory.length} scans</span>
               </div>
             )}
+            <div className="flex items-center gap-1">
+              <button onClick={() => setPage('scanner')} className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${page === 'scanner' ? 'bg-emerald-600/20 text-emerald-400' : 'text-gray-400 hover:text-white'}`}>
+                <LayoutDashboard className="w-4 h-4 inline mr-1" />Scanner
+              </button>
+              <button onClick={() => setPage('history')} className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${page === 'history' ? 'bg-emerald-600/20 text-emerald-400' : 'text-gray-400 hover:text-white'}`}>
+                <History className="w-4 h-4 inline mr-1" />History
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <URLInput
-          url={url}
-          onUrlChange={setUrl}
-          onScan={() => handleScan(url)}
-          loading={loading}
-        />
+        {page === 'scanner' && (
+          <>
+            <URLInput
+              url={url}
+              onUrlChange={setUrl}
+              onScan={() => handleScan(url)}
+              loading={loading}
+            />
 
-        {scanHistory.length > 0 && (
-          <div className="mt-4 card">
-            <h3 className="text-sm font-medium text-gray-400 mb-3 flex items-center gap-2">
-              <History className="w-4 h-4" />
-              Recent Scans
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {scanHistory.map((item, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleHistoryClick(item.url)}
-                  className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-gray-300 transition-colors truncate max-w-[200px]"
-                >
-                  {item.url.replace(/^https?:\/\//, '')}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {loading && (
-          <ProgressBar progress={progress} status={progressStatus} />
-        )}
-
-        {error && (
-          <div className="mt-6 card border-red-800 bg-red-950/30">
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0" />
-              <div>
-                <h3 className="font-medium text-red-300">Scan Error</h3>
-                <p className="text-sm text-red-400 mt-1">{error}</p>
+            {scanHistory.length > 0 && (
+              <div className="mt-4 card">
+                <h3 className="text-sm font-medium text-gray-400 mb-3 flex items-center gap-2">
+                  <History className="w-4 h-4" />
+                  Recent Scans
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {scanHistory.map((item, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handleHistoryClick(item.url)}
+                      className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm text-gray-300 transition-colors truncate max-w-[200px]"
+                    >
+                      {item.url.replace(/^https?:\/\//, '')}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          </div>
+            )}
+
+            {loading && (
+              <ProgressBar progress={progress} status={progressStatus} />
+            )}
+
+            {error && (
+              <div className="mt-6 card border-red-800 bg-red-950/30">
+                <div className="flex items-center gap-3">
+                  <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-medium text-red-300">Scan Error</h3>
+                    <p className="text-sm text-red-400 mt-1">{error}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {results && (
+              <div className="mt-6 animate-slide-in">
+                <ResultsTabs results={results} />
+              </div>
+            )}
+          </>
         )}
 
-        {results && (
-          <div className="mt-6 animate-slide-in">
-            <ResultsTabs results={results} />
-          </div>
+        {page === 'history' && (
+          <HistoryPage onRescan={(historyUrl) => { setUrl(historyUrl); handleScan(historyUrl); }} />
         )}
       </main>
 
