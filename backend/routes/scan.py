@@ -14,6 +14,7 @@ from services.vulnerability_checker import check_vulnerabilities, calculate_vuln
 from services.ssl_analyzer import analyze_ssl
 from services.parameter_analyzer import analyze_parameters
 from services.scan_store import save_scan
+from services.ws_manager import manager
 from config.settings import BASE_DIR, RATE_LIMIT
 from routes.models import ScanRequest
 
@@ -22,15 +23,24 @@ logger = logging.getLogger(__name__)
 limiter = Limiter(key_func=get_remote_address)
 
 
+async def emit_progress(client_ip: str, event: str, progress: int, message: str, data: dict = None):
+    payload = {"type": "progress", "event": event, "progress": progress, "message": message}
+    if data:
+        payload["data"] = data
+    await manager.send_personal(payload, client_ip)
+
+
 async def validate_and_fetch(url: str, level_name: str, client_ip: str = "") -> tuple[str, dict]:
     is_valid, message = validate_url(url)
     if not is_valid:
         logger.warning({"event": "invalid_url", "url": url, "reason": message, "client_ip": client_ip})
         raise HTTPException(status_code=400, detail=message)
 
+    await emit_progress(client_ip, "validating", 10, "Validating URL...")
     url = normalize_url(url)
     logger.info({"event": "scan_started", "level": level_name, "url": url, "client_ip": client_ip})
 
+    await emit_progress(client_ip, "fetching", 20, "Fetching target...")
     fetch_result = await fetch_url(url)
     if "error" in fetch_result:
         logger.error({"event": "fetch_error", "url": url, "error": fetch_result["error"], "client_ip": client_ip})
@@ -176,10 +186,19 @@ async def scan_full(request: Request):
     headers = fetch_result.get("headers", {})
     body_content = fetch_result.get("body", "")
 
+    client_ip_str = request.client.host if request.client else ""
+    await emit_progress(client_ip_str, "analyzing_headers", 30, "Analyzing headers...")
+
     header_analysis = analyze_headers(headers)
     technologies = detect_technologies(headers, body_content)
+
+    await emit_progress(client_ip_str, "checking_cves", 50, "Checking vulnerabilities...")
     vulnerabilities = check_vulnerabilities(technologies)
+
+    await emit_progress(client_ip_str, "analyzing_ssl", 70, "Analyzing SSL/TLS...")
     ssl_analysis = await analyze_ssl(url)
+
+    await emit_progress(client_ip_str, "analyzing_params", 85, "Analyzing parameters...")
     parameter_analysis = analyze_parameters(url, headers, body_content)
 
     server_info = extract_server_info(technologies)
@@ -232,6 +251,8 @@ async def scan_full(request: Request):
     client_ip_str = request.client.host if request.client else ""
     scan_id = save_scan(url, result["timestamp"], "full", result, client_ip_str)
     result["scan_id"] = scan_id
+
+    await emit_progress(client_ip_str, "complete", 100, "Scan complete", {"scan_id": scan_id})
 
     return result
 
