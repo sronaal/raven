@@ -15,6 +15,7 @@ from services.ssl_analyzer import analyze_ssl
 from services.parameter_analyzer import analyze_parameters
 from services.scan_store import save_scan
 from services.ws_manager import manager
+from services.redirect_analyzer import analyze_redirect_chain
 from config.settings import BASE_DIR, RATE_LIMIT
 from routes.models import ScanRequest
 
@@ -335,3 +336,21 @@ def generate_recommendations(header_analysis: dict, vulnerabilities: list, param
         recommendations.append("No critical issues found. Continue monitoring for new vulnerabilities.")
 
     return recommendations[:10]
+
+
+@router.post("/scan/redirects")
+@limiter.limit(RATE_LIMIT)
+async def scan_redirects(request: Request):
+    body = await request.json()
+    scan_req = ScanRequest(**body)
+    url = scan_req.url
+    is_valid, message = validate_url(url)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=message)
+
+    url = normalize_url(url)
+    client_ip_str = request.client.host if request.client else ""
+    logger.info({"event": "redirect_analysis", "url": url, "client_ip": client_ip_str})
+
+    result = await analyze_redirect_chain(url)
+    return {"url": url, "timestamp": datetime.now(timezone.utc).isoformat(), **result}
