@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { Shield, AlertTriangle, Lock, Search, History, LayoutDashboard } from 'lucide-react'
+import { Shield, AlertTriangle, Lock, Search, History, LayoutDashboard, BarChart3 } from 'lucide-react'
 import URLInput from './components/URLInput'
 import Disclaimer from './components/Disclaimer'
 import ProgressBar from './components/ProgressBar'
 import ResultsTabs from './components/ResultsTabs'
 import HistoryPage from './components/HistoryPage'
+import DashboardPage from './components/DashboardPage'
 import { scanFull, scanLevel } from './utils/api'
 
 const MAX_HISTORY = 10
@@ -98,6 +99,9 @@ function App() {
               </div>
             )}
             <div className="flex items-center gap-1">
+              <button onClick={() => setPage('dashboard')} className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${page === 'dashboard' ? 'bg-emerald-600/20 text-emerald-400' : 'text-gray-400 hover:text-white'}`}>
+                <BarChart3 className="w-4 h-4 inline mr-1" />Dashboard
+              </button>
               <button onClick={() => setPage('scanner')} className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${page === 'scanner' ? 'bg-emerald-600/20 text-emerald-400' : 'text-gray-400 hover:text-white'}`}>
                 <LayoutDashboard className="w-4 h-4 inline mr-1" />Scanner
               </button>
@@ -110,6 +114,8 @@ function App() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {page === 'dashboard' && <DashboardPage />}
+
         {page === 'scanner' && (
           <>
             <URLInput
