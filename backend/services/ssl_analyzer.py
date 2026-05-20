@@ -6,6 +6,10 @@ from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
 
+
+def _now_utc():
+    return datetime.datetime.now(datetime.timezone.utc)
+
 async def analyze_ssl(url: str) -> dict:
     parsed = urlparse(url)
     hostname = parsed.hostname
@@ -64,12 +68,13 @@ def parse_certificate(cert: dict) -> dict:
     issuer = dict(x[0] for x in cert.get("issuer", []))
 
     not_after = cert.get("notAfter", "")
-    expiry_date = None
-    days_until_expiry = None
-    if not_after:
-        try:
-            expiry_date = datetime.datetime.strptime(not_after, "%b %d %H:%M:%S %Y %Z")
-            days_until_expiry = (expiry_date - datetime.datetime.now()).days
+            expiry_date = None
+            days_until_expiry = None
+            if not_after:
+                try:
+                    expiry_date = datetime.datetime.strptime(not_after, "%b %d %H:%M:%S %Y %Z")
+                    expiry_date = expiry_date.replace(tzinfo=datetime.timezone.utc)
+                    days_until_expiry = (expiry_date - _now_utc()).days
         except Exception:
             pass
 
@@ -97,9 +102,10 @@ def evaluate_ssl_state(cert: dict, protocol: str) -> str:
     if not_after:
         try:
             expiry = datetime.datetime.strptime(not_after, "%b %d %H:%M:%S %Y %Z")
-            if expiry < datetime.datetime.now():
+            expiry = expiry.replace(tzinfo=datetime.timezone.utc)
+            if expiry < _now_utc():
                 return "expired"
-            days_left = (expiry - datetime.datetime.now()).days
+            days_left = (expiry - _now_utc()).days
             if days_left < 30:
                 return "expiring_soon"
         except Exception:
