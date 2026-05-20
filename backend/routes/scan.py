@@ -21,18 +21,21 @@ logger = logging.getLogger(__name__)
 limiter = Limiter(key_func=get_remote_address)
 
 
-async def validate_and_fetch(url: str, level_name: str) -> tuple[str, dict]:
+async def validate_and_fetch(url: str, level_name: str, client_ip: str = "") -> tuple[str, dict]:
     is_valid, message = validate_url(url)
     if not is_valid:
+        logger.warning({"event": "invalid_url", "url": url, "reason": message, "client_ip": client_ip})
         raise HTTPException(status_code=400, detail=message)
 
     url = normalize_url(url)
-    logger.info(f"{level_name} scan requested for: {url}")
+    logger.info({"event": "scan_started", "level": level_name, "url": url, "client_ip": client_ip})
 
     fetch_result = await fetch_url(url)
     if "error" in fetch_result:
+        logger.error({"event": "fetch_error", "url": url, "error": fetch_result["error"], "client_ip": client_ip})
         raise HTTPException(status_code=502, detail=fetch_result["error"])
 
+    logger.info({"event": "scan_completed", "level": level_name, "url": url, "client_ip": client_ip})
     return url, fetch_result
 
 
@@ -62,7 +65,7 @@ async def scan_level1(request: Request):
     body = await request.json()
     scan_req = ScanRequest(**body)
     url = scan_req.url
-    url, fetch_result = await validate_and_fetch(url, "Level 1")
+    url, fetch_result = await validate_and_fetch(url, "Level 1", request.client.host if request.client else "")
 
     headers = fetch_result.get("headers", {})
     body_content = fetch_result.get("body", "")
@@ -87,7 +90,7 @@ async def scan_level2(request: Request):
     body = await request.json()
     scan_req = ScanRequest(**body)
     url = scan_req.url
-    url, fetch_result = await validate_and_fetch(url, "Level 2")
+    url, fetch_result = await validate_and_fetch(url, "Level 2", request.client.host if request.client else "")
 
     headers = fetch_result.get("headers", {})
     body_content = fetch_result.get("body", "")
@@ -124,7 +127,7 @@ async def scan_level3(request: Request):
     body = await request.json()
     scan_req = ScanRequest(**body)
     url = scan_req.url
-    url, fetch_result = await validate_and_fetch(url, "Level 3")
+    url, fetch_result = await validate_and_fetch(url, "Level 3", request.client.host if request.client else "")
 
     headers = fetch_result.get("headers", {})
     body_content = fetch_result.get("body", "")
@@ -152,7 +155,7 @@ async def scan_full(request: Request):
     body = await request.json()
     scan_req = ScanRequest(**body)
     url = scan_req.url
-    url, fetch_result = await validate_and_fetch(url, "Full")
+    url, fetch_result = await validate_and_fetch(url, "Full", request.client.host if request.client else "")
 
     headers = fetch_result.get("headers", {})
     body_content = fetch_result.get("body", "")

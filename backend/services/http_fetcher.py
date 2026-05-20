@@ -1,6 +1,6 @@
 import httpx
 import logging
-from config.settings import SCAN_TIMEOUT, USER_AGENT
+from config.settings import SCAN_TIMEOUT, USER_AGENT, MAX_BODY_SIZE
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ async def fetch_url(url: str) -> dict:
             return {
                 "status_code": response.status_code,
                 "headers": dict(response.headers),
-                "body": response.text[:100000],
+                "body": response.text[:MAX_BODY_SIZE],
                 "url": str(response.url),
                 "elapsed": response.elapsed.total_seconds(),
             }

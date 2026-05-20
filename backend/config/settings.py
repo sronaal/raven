@@ -1,4 +1,5 @@
 import os
+import logging
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -8,6 +9,8 @@ SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
 RATE_LIMIT = "10/minute"
 
 SCAN_TIMEOUT = 30
+
+MAX_BODY_SIZE = int(os.getenv("MAX_BODY_SIZE", "100000"))
 
 ALLOWED_SCHEMES = ["http", "https"]
 
@@ -30,3 +33,9 @@ EXTERNAL_API_ENABLED = os.getenv("EXTERNAL_API_ENABLED", "true").lower() == "tru
 CRT_SH_API = "https://crt.sh/"
 
 CVE_API_BASE = "https://services.nvd.nist.gov/rest/json/cves/2.0"
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
