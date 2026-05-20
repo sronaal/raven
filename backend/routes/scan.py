@@ -20,38 +20,56 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 limiter = Limiter(key_func=get_remote_address)
 
+
+async def validate_and_fetch(url: str, level_name: str) -> tuple[str, dict]:
+    is_valid, message = validate_url(url)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=message)
+
+    url = normalize_url(url)
+    logger.info(f"{level_name} scan requested for: {url}")
+
+    fetch_result = await fetch_url(url)
+    if "error" in fetch_result:
+        raise HTTPException(status_code=502, detail=fetch_result["error"])
+
+    return url, fetch_result
+
+
+def extract_server_info(technologies: list) -> dict:
+    for tech in technologies:
+        if tech.get("type") == "Web Server":
+            return {
+                "type": tech["name"],
+                "version": tech.get("version"),
+                "vulnerability": "check_level2",
+            }
+    return {"type": "Unknown", "version": None, "vulnerability": "unknown"}
+
+
+def deduplicate_vulnerabilities(vulns: list) -> list:
+    seen_ids = set()
+    unique = []
+    for v in vulns:
+        if v["id"] not in seen_ids:
+            seen_ids.add(v["id"])
+            unique.append(v)
+    return unique
+
 @router.post("/scan/level1")
 @limiter.limit(RATE_LIMIT)
 async def scan_level1(request: Request):
     body = await request.json()
     scan_req = ScanRequest(**body)
     url = scan_req.url
-    is_valid, message = validate_url(url)
-    if not is_valid:
-        raise HTTPException(status_code=400, detail=message)
-
-    url = normalize_url(url)
-    logger.info(f"Level 1 scan requested for: {url}")
-
-    fetch_result = await fetch_url(url)
-    if "error" in fetch_result:
-        raise HTTPException(status_code=502, detail=fetch_result["error"])
+    url, fetch_result = await validate_and_fetch(url, "Level 1")
 
     headers = fetch_result.get("headers", {})
-    body = fetch_result.get("body", "")
+    body_content = fetch_result.get("body", "")
 
     header_analysis = analyze_headers(headers)
-    technologies = detect_technologies(headers, body)
-
-    server_info = {"type": "Unknown", "version": None, "vulnerability": "unknown"}
-    for tech in technologies:
-        if tech.get("type") == "Web Server":
-            server_info = {
-                "type": tech["name"],
-                "version": tech.get("version"),
-                "vulnerability": "check_level2",
-            }
-            break
+    technologies = detect_technologies(headers, body_content)
+    server_info = extract_server_info(technologies)
 
     return {
         "url": url,
@@ -69,21 +87,12 @@ async def scan_level2(request: Request):
     body = await request.json()
     scan_req = ScanRequest(**body)
     url = scan_req.url
-    is_valid, message = validate_url(url)
-    if not is_valid:
-        raise HTTPException(status_code=400, detail=message)
-
-    url = normalize_url(url)
-    logger.info(f"Level 2 scan requested for: {url}")
-
-    fetch_result = await fetch_url(url)
-    if "error" in fetch_result:
-        raise HTTPException(status_code=502, detail=fetch_result["error"])
+    url, fetch_result = await validate_and_fetch(url, "Level 2")
 
     headers = fetch_result.get("headers", {})
-    body = fetch_result.get("body", "")
+    body_content = fetch_result.get("body", "")
 
-    technologies = detect_technologies(headers, body)
+    technologies = detect_technologies(headers, body_content)
     vulnerabilities = check_vulnerabilities(technologies)
 
     external_cves = []
@@ -91,24 +100,11 @@ async def scan_level2(request: Request):
         ext = await fetch_external_cves(tech["name"], tech.get("version", ""))
         external_cves.extend(ext)
 
-    all_vulnerabilities = vulnerabilities + external_cves
-    seen_ids = set()
-    unique_vulnerabilities = []
-    for v in all_vulnerabilities:
-        if v["id"] not in seen_ids:
-            seen_ids.add(v["id"])
-            unique_vulnerabilities.append(v)
-
+    unique_vulnerabilities = deduplicate_vulnerabilities(vulnerabilities + external_cves)
     ssl_analysis = await analyze_ssl(url)
 
-    hsts_found = False
-    for key in headers:
-        if key.lower() == "strict-transport-security":
-            hsts_found = True
-            break
-
+    hsts_found = any(k.lower() == "strict-transport-security" for k in headers)
     waf_detected = detect_waf(headers)
-
     vuln_score = calculate_vulnerability_score(unique_vulnerabilities)
 
     return {
@@ -128,23 +124,13 @@ async def scan_level3(request: Request):
     body = await request.json()
     scan_req = ScanRequest(**body)
     url = scan_req.url
-    is_valid, message = validate_url(url)
-    if not is_valid:
-        raise HTTPException(status_code=400, detail=message)
-
-    url = normalize_url(url)
-    logger.info(f"Level 3 scan requested for: {url}")
-
-    fetch_result = await fetch_url(url)
-    if "error" in fetch_result:
-        raise HTTPException(status_code=502, detail=fetch_result["error"])
+    url, fetch_result = await validate_and_fetch(url, "Level 3")
 
     headers = fetch_result.get("headers", {})
-    body = fetch_result.get("body", "")
+    body_content = fetch_result.get("body", "")
 
-    parameter_analysis = analyze_parameters(url, headers, body)
-
-    csrf_detected = detect_csrf_protection(headers, body)
+    parameter_analysis = analyze_parameters(url, headers, body_content)
+    csrf_detected = detect_csrf_protection(headers, body_content)
     rate_limit_detected = detect_rate_limit(headers)
 
     return {
@@ -166,36 +152,18 @@ async def scan_full(request: Request):
     body = await request.json()
     scan_req = ScanRequest(**body)
     url = scan_req.url
-    is_valid, message = validate_url(url)
-    if not is_valid:
-        raise HTTPException(status_code=400, detail=message)
-
-    url = normalize_url(url)
-    logger.info(f"Full scan requested for: {url}")
-
-    fetch_result = await fetch_url(url)
-    if "error" in fetch_result:
-        raise HTTPException(status_code=502, detail=fetch_result["error"])
+    url, fetch_result = await validate_and_fetch(url, "Full")
 
     headers = fetch_result.get("headers", {})
-    body = fetch_result.get("body", "")
+    body_content = fetch_result.get("body", "")
 
     header_analysis = analyze_headers(headers)
-    technologies = detect_technologies(headers, body)
+    technologies = detect_technologies(headers, body_content)
     vulnerabilities = check_vulnerabilities(technologies)
     ssl_analysis = await analyze_ssl(url)
-    parameter_analysis = analyze_parameters(url, headers, body)
+    parameter_analysis = analyze_parameters(url, headers, body_content)
 
-    server_info = {"type": "Unknown", "version": None, "vulnerability": "unknown"}
-    for tech in technologies:
-        if tech.get("type") == "Web Server":
-            server_info = {
-                "type": tech["name"],
-                "version": tech.get("version"),
-                "vulnerability": "check_level2",
-            }
-            break
-
+    server_info = extract_server_info(technologies)
     vuln_score = calculate_vulnerability_score(vulnerabilities)
 
     score1 = header_analysis["score"]
