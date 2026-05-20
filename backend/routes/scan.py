@@ -1,8 +1,10 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from datetime import datetime, timezone
 import json
 import logging
 from pathlib import Path
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from utils.validators import validate_url, normalize_url
 from services.http_fetcher import fetch_url
@@ -11,14 +13,17 @@ from services.tech_detector import detect_technologies
 from services.vulnerability_checker import check_vulnerabilities, calculate_vulnerability_score, fetch_external_cves
 from services.ssl_analyzer import analyze_ssl
 from services.parameter_analyzer import analyze_parameters
-from config.settings import BASE_DIR
+from config.settings import BASE_DIR, RATE_LIMIT
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+limiter = Limiter(key_func=get_remote_address)
 
 @router.post("/scan/level1")
-async def scan_level1(request: dict):
-    url = request.get("url", "")
+@limiter.limit(RATE_LIMIT)
+async def scan_level1(request: Request):
+    body = await request.json()
+    url = body.get("url", "")
     is_valid, message = validate_url(url)
     if not is_valid:
         raise HTTPException(status_code=400, detail=message)
@@ -57,8 +62,10 @@ async def scan_level1(request: dict):
     }
 
 @router.post("/scan/level2")
-async def scan_level2(request: dict):
-    url = request.get("url", "")
+@limiter.limit(RATE_LIMIT)
+async def scan_level2(request: Request):
+    body = await request.json()
+    url = body.get("url", "")
     is_valid, message = validate_url(url)
     if not is_valid:
         raise HTTPException(status_code=400, detail=message)
@@ -113,8 +120,10 @@ async def scan_level2(request: dict):
     }
 
 @router.post("/scan/level3")
-async def scan_level3(request: dict):
-    url = request.get("url", "")
+@limiter.limit(RATE_LIMIT)
+async def scan_level3(request: Request):
+    body = await request.json()
+    url = body.get("url", "")
     is_valid, message = validate_url(url)
     if not is_valid:
         raise HTTPException(status_code=400, detail=message)
@@ -148,8 +157,10 @@ async def scan_level3(request: dict):
     }
 
 @router.post("/scan/full")
-async def scan_full(request: dict):
-    url = request.get("url", "")
+@limiter.limit(RATE_LIMIT)
+async def scan_full(request: Request):
+    body = await request.json()
+    url = body.get("url", "")
     is_valid, message = validate_url(url)
     if not is_valid:
         raise HTTPException(status_code=400, detail=message)

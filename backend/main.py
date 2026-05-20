@@ -5,13 +5,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from starlette.responses import JSONResponse
 
-from config.settings import RATE_LIMIT
-from routes.scan import router as scan_router
+from routes.scan import router as scan_router, limiter
 
 app = FastAPI(
     title="URL Security Scanner",
@@ -19,7 +16,6 @@ app = FastAPI(
     version="1.0.0",
 )
 
-limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 
 app.add_middleware(
