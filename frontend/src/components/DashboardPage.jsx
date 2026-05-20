@@ -1,26 +1,52 @@
 import { useState, useEffect } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
-import { BarChart3, Globe, Shield, AlertTriangle, TrendingUp, Loader2 } from 'lucide-react'
-import { getStats } from '../utils/api'
+import { BarChart3, Globe, Shield, AlertTriangle, TrendingUp, Loader2, WifiOff, RefreshCw } from 'lucide-react'
+import { getStats, healthCheck } from '../utils/api'
 
 const COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#6b7280']
 
 function DashboardPage() {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [backendOk, setBackendOk] = useState(true)
+  const [errorMsg, setErrorMsg] = useState('')
 
   useEffect(() => { loadStats() }, [])
 
   async function loadStats() {
+    setLoading(true)
+    setErrorMsg('')
     try {
+      await healthCheck()
+      setBackendOk(true)
       const data = await getStats()
       setStats(data)
-    } catch (e) { console.error(e) }
-    finally { setLoading(false) }
+    } catch (e) {
+      setBackendOk(false)
+      setErrorMsg(e.message || 'Backend connection failed')
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (loading) return <div className="flex items-center justify-center py-16"><Loader2 className="w-8 h-8 text-emerald-400 animate-spin" /></div>
-  if (!stats) return <div className="card text-center text-gray-400 py-16">Failed to load stats</div>
+
+  if (!backendOk) {
+    return (
+      <div className="card border-red-800 bg-red-950/30 text-center py-16 max-w-lg mx-auto">
+        <WifiOff className="w-12 h-12 text-red-400 mx-auto mb-4" />
+        <h3 className="text-lg font-bold text-red-300 mb-2">Backend Not Reachable</h3>
+        <p className="text-sm text-red-400 mb-4">{errorMsg}</p>
+        <div className="bg-gray-900 rounded p-3 mb-4 text-left">
+          <p className="text-xs text-gray-400 mb-1">Start the backend:</p>
+          <code className="text-xs text-emerald-400">cd backend && source venv/bin/activate && pip install -r requirements.txt && uvicorn main:app --reload</code>
+        </div>
+        <button onClick={loadStats} className="btn-primary inline-flex items-center gap-2 text-sm">
+          <RefreshCw className="w-4 h-4" /> Retry Connection
+        </button>
+      </div>
+    )
+  }
 
   const sevData = Object.entries(stats.vulnerability_severity_counts || {}).map(([name, value]) => ({ name, value }))
 
