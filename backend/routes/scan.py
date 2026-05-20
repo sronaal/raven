@@ -17,6 +17,7 @@ from services.scan_store import save_scan
 from services.ws_manager import manager
 from services.redirect_analyzer import analyze_redirect_chain
 from services.subdomain_enum import enumerate_subdomains
+from services.robots_analyzer import analyze_robots_and_sitemap
 from config.settings import BASE_DIR, RATE_LIMIT
 from routes.models import ScanRequest
 
@@ -375,3 +376,19 @@ async def scan_subdomains(request: Request):
 
     result = await enumerate_subdomains(hostname)
     return {"domain": hostname, "timestamp": datetime.now(timezone.utc).isoformat(), **result}
+
+
+@router.post("/scan/robots")
+@limiter.limit(RATE_LIMIT)
+async def scan_robots(request: Request):
+    body = await request.json()
+    url = body.get("url", "")
+    if not url:
+        raise HTTPException(status_code=400, detail="URL is required")
+
+    url = normalize_url(url)
+    client_ip_str = request.client.host if request.client else ""
+    logger.info({"event": "robots_analysis", "url": url, "client_ip": client_ip_str})
+
+    result = await analyze_robots_and_sitemap(url)
+    return {"url": url, "timestamp": datetime.now(timezone.utc).isoformat(), **result}
