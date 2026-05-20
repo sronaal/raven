@@ -43,3 +43,33 @@ async def scan_report(scan_id: int):
         raise HTTPException(status_code=500, detail="PDF generation failed. Install weasyprint.")
 
     return Response(content=pdf_bytes, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename=scan-{scan_id}.pdf"})
+
+
+@router.get("/scans/compare")
+async def compare_scans(id1: int = Query(...), id2: int = Query(...)):
+    scan1 = get_scan_by_id(id1)
+    scan2 = get_scan_by_id(id2)
+    if not scan1 or not scan2:
+        raise HTTPException(status_code=404, detail="One or both scans not found")
+
+    r1 = scan1.get("result_json", scan1)
+    r2 = scan2.get("result_json", scan2)
+
+    s1_total = r1.get("resumen_general", {}).get("total_score", scan1.get("total_score"))
+    s2_total = r2.get("resumen_general", {}).get("total_score", scan2.get("total_score"))
+
+    vulns1 = {v["id"] for v in r1.get("nivel2", {}).get("vulnerabilities", [])}
+    vulns2 = {v["id"] for v in r2.get("nivel2", {}).get("vulnerabilities", [])}
+
+    headers1 = {h["name"] for h in r1.get("nivel1", {}).get("headers", {}).get("configured_correctly", [])}
+    headers2 = {h["name"] for h in r2.get("nivel1", {}).get("headers", {}).get("configured_correctly", [])}
+
+    return {
+        "scan1": {"id": id1, "url": scan1["url"], "timestamp": scan1["timestamp"], "total_score": s1_total},
+        "scan2": {"id": id2, "url": scan2["url"], "timestamp": scan2["timestamp"], "total_score": s2_total},
+        "score_delta": (s2_total or 0) - (s1_total or 0),
+        "new_vulnerabilities": list(vulns2 - vulns1),
+        "resolved_vulnerabilities": list(vulns1 - vulns2),
+        "new_headers": list(headers2 - headers1),
+        "removed_headers": list(headers1 - headers2),
+    }
