@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Query
 from datetime import datetime, timezone
 import json
+import asyncio
 import logging
 from pathlib import Path
 from slowapi import Limiter
@@ -392,3 +393,62 @@ async def scan_robots(request: Request):
 
     result = await analyze_robots_and_sitemap(url)
     return {"url": url, "timestamp": datetime.now(timezone.utc).isoformat(), **result}
+
+
+@router.post("/scan/batch")
+async def scan_batch(request: Request):
+    body = await request.json()
+    urls = body.get("urls", [])
+    if not isinstance(urls, list) or not urls:
+        raise HTTPException(status_code=400, detail="urls array is required")
+    if len(urls) > 20:
+        raise HTTPException(status_code=400, detail="Maximum 20 URLs per batch")
+
+    client_ip_str = request.client.host if request.client else ""
+    level = body.get("level", "full")
+
+    async def scan_one(url: str):
+        try:
+            is_valid, message = validate_url(url)
+            if not is_valid:
+                return {"url": url, "status": "error", "error": message}
+
+            url = normalize_url(url)
+            fetch_result = await fetch_url(url)
+            if "error" in fetch_result:
+                return {"url": url, "status": "error", "error": fetch_result["error"]}
+
+            headers = fetch_result.get("headers", {})
+            body_content = fetch_result.get("body", "")
+
+            header_analysis = analyze_headers(headers)
+            technologies = detect_technologies(headers, body_content)
+
+            if level == "level1":
+                score = header_analysis["score"]
+            elif level == "level2":
+                vulns = check_vulnerabilities(technologies)
+                score = calculate_vulnerability_score(vulns)
+            elif level == "level3":
+                param_analysis = analyze_parameters(url, headers, body_content)
+                score = param_analysis["score"]
+            else:
+                vulns = check_vulnerabilities(technologies)
+                param_analysis = analyze_parameters(url, headers, body_content)
+                s1 = header_analysis["score"]
+                s2 = calculate_vulnerability_score(vulns)
+                s3 = param_analysis["score"]
+                score = int(s1 * 0.3 + s2 * 0.4 + s3 * 0.3)
+
+            return {"url": url, "status": "success", "score": score, "technologies": len(technologies)}
+        except Exception as e:
+            return {"url": url, "status": "error", "error": str(e)}
+
+    results = await asyncio.gather(*[scan_one(u) for u in urls])
+    return {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "total": len(urls),
+        "successful": sum(1 for r in results if r["status"] == "success"),
+        "failed": sum(1 for r in results if r["status"] == "error"),
+        "results": results,
+    }
