@@ -68,13 +68,13 @@ def parse_certificate(cert: dict) -> dict:
     issuer = dict(x[0] for x in cert.get("issuer", []))
 
     not_after = cert.get("notAfter", "")
-            expiry_date = None
-            days_until_expiry = None
-            if not_after:
-                try:
-                    expiry_date = datetime.datetime.strptime(not_after, "%b %d %H:%M:%S %Y %Z")
-                    expiry_date = expiry_date.replace(tzinfo=datetime.timezone.utc)
-                    days_until_expiry = (expiry_date - _now_utc()).days
+    expiry_date = None
+    days_until_expiry = None
+    if not_after:
+        try:
+            expiry_date = datetime.datetime.strptime(not_after, "%b %d %H:%M:%S %Y %Z")
+            expiry_date = expiry_date.replace(tzinfo=datetime.timezone.utc)
+            days_until_expiry = (expiry_date - _now_utc()).days
         except Exception:
             pass
 
