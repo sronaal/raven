@@ -19,6 +19,8 @@ from services.ws_manager import manager
 from services.redirect_analyzer import analyze_redirect_chain
 from services.subdomain_enum import enumerate_subdomains
 from services.robots_analyzer import analyze_robots_and_sitemap
+from services.cookie_analyzer import analyze_cookie
+from services.mozilla_grading import calculate_mozilla_grade
 from config.settings import BASE_DIR, RATE_LIMIT
 from routes.models import ScanRequest
 
@@ -452,3 +454,54 @@ async def scan_batch(request: Request):
         "failed": sum(1 for r in results if r["status"] == "error"),
         "results": results,
     }
+
+
+@router.post("/scan/cookies")
+@limiter.limit(RATE_LIMIT)
+async def scan_cookies(request: Request):
+    body = await request.json()
+    url = body.get("url", "")
+    if not url:
+        raise HTTPException(status_code=400, detail="URL is required")
+
+    url = normalize_url(url)
+    fetch_result = await fetch_url(url)
+    if "error" in fetch_result:
+        raise HTTPException(status_code=502, detail=fetch_result["error"])
+
+    headers = fetch_result.get("headers", {})
+    cookies = []
+    set_cookie = headers.get("Set-Cookie", headers.get("set-cookie", ""))
+    if set_cookie:
+        for cookie_str in set_cookie.split(", "):
+            if "=" in cookie_str:
+                cookies.append(analyze_cookie(cookie_str.strip()))
+
+    return {"url": url, "timestamp": datetime.now(timezone.utc).isoformat(), "cookies": cookies, "total": len(cookies)}
+
+
+@router.post("/scan/grade")
+@limiter.limit(RATE_LIMIT)
+async def scan_grade(request: Request):
+    body = await request.json()
+    url = body.get("url", "")
+    if not url:
+        raise HTTPException(status_code=400, detail="URL is required")
+
+    url = normalize_url(url)
+    fetch_result = await fetch_url(url)
+    if "error" in fetch_result:
+        raise HTTPException(status_code=502, detail=fetch_result["error"])
+
+    headers = fetch_result.get("headers", {})
+    body_content = fetch_result.get("body", "")
+
+    header_analysis = analyze_headers(headers)
+    technologies = detect_technologies(headers, body_content)
+    vulnerabilities = check_vulnerabilities(technologies)
+    ssl_analysis = await analyze_ssl(url)
+    vuln_score = calculate_vulnerability_score(vulnerabilities)
+
+    grade = calculate_mozilla_grade(header_analysis, ssl_analysis, vuln_score)
+
+    return {"url": url, "timestamp": datetime.now(timezone.utc).isoformat(), **grade}
