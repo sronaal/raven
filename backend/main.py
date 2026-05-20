@@ -11,6 +11,7 @@ from starlette.responses import JSONResponse
 from routes.scan import router as scan_router, limiter
 from routes.history import router as history_router
 from routes.websocket import router as ws_router
+from routes.crawler import router as crawler_router
 from services.scan_store import init_db
 
 init_db()
@@ -34,6 +35,7 @@ app.add_middleware(
 app.include_router(scan_router, prefix="/api", tags=["scanner"])
 app.include_router(history_router, prefix="/api", tags=["history"])
 app.include_router(ws_router, tags=["websocket"])
+app.include_router(crawler_router, prefix="/api", tags=["crawler"])
 
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_handler(request, exc):

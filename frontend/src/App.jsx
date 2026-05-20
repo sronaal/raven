@@ -1,12 +1,17 @@
 import { useState } from 'react'
-import { Shield, AlertTriangle, Lock, Search, History, LayoutDashboard, BarChart3, Sun, Moon } from 'lucide-react'
+import { Shield, AlertTriangle, Lock, Search, History, LayoutDashboard, BarChart3, Sun, Moon, Spider, Globe, Network, Package, FileCheck } from 'lucide-react'
 import URLInput from './components/URLInput'
 import Disclaimer from './components/Disclaimer'
 import ProgressBar from './components/ProgressBar'
 import ResultsTabs from './components/ResultsTabs'
 import HistoryPage from './components/HistoryPage'
 import DashboardPage from './components/DashboardPage'
-import { scanFull, scanLevel } from './utils/api'
+import CrawlerResults from './components/CrawlerResults'
+import OwaspDashboard from './components/OwaspDashboard'
+import AttackSurfaceGraph from './components/AttackSurfaceGraph'
+import DependencyReport from './components/DependencyReport'
+import ComplianceReport from './components/ComplianceReport'
+import { scanFull, scanLevel, crawlSite, scanOwasp, scanCompliance } from './utils/api'
 
 const MAX_HISTORY = 10
 
@@ -28,6 +33,10 @@ function App() {
   })
   const [page, setPage] = useState('scanner')
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') !== 'light')
+  const [crawlerData, setCrawlerData] = useState(null)
+  const [owaspData, setOwaspData] = useState(null)
+  const [complianceData, setComplianceData] = useState(null)
+  const [toolLoading, setToolLoading] = useState(false)
 
   const handleScan = async (scanUrl, level = 'full') => {
     setLoading(true)
@@ -77,6 +86,30 @@ function App() {
     handleScan(historyUrl)
   }
 
+  const handleToolScan = async (tool) => {
+    if (!url.trim()) return
+    setToolLoading(true)
+    try {
+      if (tool === 'crawler') {
+        const data = await crawlSite(url, 3, 50)
+        setCrawlerData(data)
+        setPage('crawler')
+      } else if (tool === 'owasp') {
+        const data = await scanOwasp(url)
+        setOwaspData(data)
+        setPage('owasp')
+      } else if (tool === 'compliance') {
+        const data = await scanCompliance(url)
+        setComplianceData(data)
+        setPage('compliance')
+      }
+    } catch (err) {
+      setError(err.response?.data?.detail || err.message || 'Tool scan failed')
+    } finally {
+      setToolLoading(false)
+    }
+  }
+
   return (
     <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950' : 'bg-gradient-to-br from-gray-100 via-white to-gray-100'}`}>
       <Disclaimer visible={showDisclaimer} onAccept={() => setShowDisclaimer(false)} />
@@ -99,15 +132,24 @@ function App() {
                 <span className="text-sm">{scanHistory.length} scans</span>
               </div>
             )}
-            <div className="flex items-center gap-1">
-              <button onClick={() => setPage('dashboard')} className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${page === 'dashboard' ? 'bg-emerald-600/20 text-emerald-400' : 'text-gray-400 hover:text-white'}`}>
-                <BarChart3 className="w-4 h-4 inline mr-1" />Dashboard
+            <div className="flex items-center gap-1 overflow-x-auto">
+              <button onClick={() => setPage('dashboard')} className={`px-2 py-1.5 rounded-lg text-xs transition-colors whitespace-nowrap ${page === 'dashboard' ? 'bg-emerald-600/20 text-emerald-400' : 'text-gray-400 hover:text-white'}`}>
+                <BarChart3 className="w-3.5 h-3.5 inline mr-1" />Dashboard
               </button>
-              <button onClick={() => setPage('scanner')} className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${page === 'scanner' ? 'bg-emerald-600/20 text-emerald-400' : 'text-gray-400 hover:text-white'}`}>
-                <LayoutDashboard className="w-4 h-4 inline mr-1" />Scanner
+              <button onClick={() => setPage('scanner')} className={`px-2 py-1.5 rounded-lg text-xs transition-colors whitespace-nowrap ${page === 'scanner' ? 'bg-emerald-600/20 text-emerald-400' : 'text-gray-400 hover:text-white'}`}>
+                <LayoutDashboard className="w-3.5 h-3.5 inline mr-1" />Scanner
               </button>
-              <button onClick={() => setPage('history')} className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${page === 'history' ? 'bg-emerald-600/20 text-emerald-400' : 'text-gray-400 hover:text-white'}`}>
-                <History className="w-4 h-4 inline mr-1" />History
+              <button onClick={() => setPage('history')} className={`px-2 py-1.5 rounded-lg text-xs transition-colors whitespace-nowrap ${page === 'history' ? 'bg-emerald-600/20 text-emerald-400' : 'text-gray-400 hover:text-white'}`}>
+                <History className="w-3.5 h-3.5 inline mr-1" />History
+              </button>
+              <button onClick={() => handleToolScan('crawler')} disabled={toolLoading || !url.trim()} className={`px-2 py-1.5 rounded-lg text-xs transition-colors whitespace-nowrap ${page === 'crawler' ? 'bg-emerald-600/20 text-emerald-400' : 'text-gray-400 hover:text-white'} disabled:opacity-50`}>
+                <Spider className="w-3.5 h-3.5 inline mr-1" />Crawler
+              </button>
+              <button onClick={() => handleToolScan('owasp')} disabled={toolLoading || !url.trim()} className={`px-2 py-1.5 rounded-lg text-xs transition-colors whitespace-nowrap ${page === 'owasp' ? 'bg-emerald-600/20 text-emerald-400' : 'text-gray-400 hover:text-white'} disabled:opacity-50`}>
+                <Shield className="w-3.5 h-3.5 inline mr-1" />OWASP
+              </button>
+              <button onClick={() => handleToolScan('compliance')} disabled={toolLoading || !url.trim()} className={`px-2 py-1.5 rounded-lg text-xs transition-colors whitespace-nowrap ${page === 'compliance' ? 'bg-emerald-600/20 text-emerald-400' : 'text-gray-400 hover:text-white'} disabled:opacity-50`}>
+                <FileCheck className="w-3.5 h-3.5 inline mr-1" />Compliance
               </button>
               <button onClick={() => { setDarkMode(d => !d); localStorage.setItem('theme', darkMode ? 'light' : 'dark') }} className="p-2 rounded-lg text-gray-400 hover:text-white transition-colors ml-1">
                 {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
@@ -175,6 +217,27 @@ function App() {
 
         {page === 'history' && (
           <HistoryPage onRescan={(historyUrl) => { setUrl(historyUrl); handleScan(historyUrl); }} />
+        )}
+
+        {page === 'crawler' && (
+          <>
+            {toolLoading && <ProgressBar progress={50} status="Crawling site..." />}
+            <CrawlerResults data={crawlerData} />
+          </>
+        )}
+
+        {page === 'owasp' && (
+          <>
+            {toolLoading && <ProgressBar progress={50} status="Running OWASP Top 10 analysis..." />}
+            <OwaspDashboard data={owaspData} />
+          </>
+        )}
+
+        {page === 'compliance' && (
+          <>
+            {toolLoading && <ProgressBar progress={50} status="Checking compliance..." />}
+            <ComplianceReport data={complianceData} />
+          </>
         )}
       </main>
 

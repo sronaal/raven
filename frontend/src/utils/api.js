@@ -51,3 +51,63 @@ export async function getStats() {
   const response = await api.get('/stats')
   return response.data
 }
+
+export async function crawlSite(url, maxDepth = 3, maxPages = 50) {
+  const response = await api.post('/crawl', { url, max_depth: maxDepth, max_pages: maxPages })
+  return response.data
+}
+
+export async function scanOwasp(url) {
+  const response = await api.post('/scan/owasp', { url })
+  return response.data
+}
+
+export async function discoverApis(url) {
+  const response = await api.post('/discover', { url })
+  return response.data
+}
+
+export async function checkDependencies(url) {
+  const response = await api.post('/dependencies', { url })
+  return response.data
+}
+
+export async function scanGrade(url) {
+  const response = await api.post('/scan/grade', { url })
+  return response.data
+}
+
+export async function scanCookies(url) {
+  const response = await api.post('/scan/cookies', { url })
+  return response.data
+}
+
+export async function scanRedirects(url) {
+  const response = await api.post('/scan/redirects', { url })
+  return response.data
+}
+
+export async function scanSubdomains(url) {
+  const response = await api.post('/scan/subdomains', { url })
+  return response.data
+}
+
+export async function scanRobots(url) {
+  const response = await api.post('/scan/robots', { url })
+  return response.data
+}
+
+export async function scanBatch(urls, level = 'full') {
+  const response = await api.post('/scan/batch', { urls, level })
+  return response.data
+}
+
+export async function scanCompliance(url) {
+  const response = await api.post('/compliance', { url })
+  return response.data
+}
+
+export async function scanSurface(url) {
+  const response = await api.post('/surface', { url })
+  return response.data
+}
