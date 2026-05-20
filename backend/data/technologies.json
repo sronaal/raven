@@ -1,0 +1,71 @@
+{
+  "servers": [
+    {"name": "Apache", "signatures": ["Apache/", "apache"], "type": "Web Server", "confidence": "high"},
+    {"name": "Nginx", "signatures": ["nginx/", "nginx"], "type": "Web Server", "confidence": "high"},
+    {"name": "IIS", "signatures": ["Microsoft-IIS/", "IIS"], "type": "Web Server", "confidence": "high"},
+    {"name": "LiteSpeed", "signatures": ["LiteSpeed", "litespeed"], "type": "Web Server", "confidence": "high"},
+    {"name": "Caddy", "signatures": ["Caddy", "caddy"], "type": "Web Server", "confidence": "medium"},
+    {"name": "Cloudflare", "signatures": ["cloudflare", "cf-ray"], "type": "CDN/Proxy", "confidence": "high"},
+    {"name": "AWS CloudFront", "signatures": ["x-amz-cf-id", "x-amz"], "type": "CDN", "confidence": "high"},
+    {"name": "Varnish", "signatures": ["Varnish", "x-varnish", "x-varnish-cache"], "type": "Cache/Proxy", "confidence": "high"},
+    {"name": "HAProxy", "signatures": ["haproxy"], "type": "Load Balancer", "confidence": "medium"},
+    {"name": "Tomcat", "signatures": ["Apache-Coyote", "tomcat"], "type": "Application Server", "confidence": "high"},
+    {"name": "Gunicorn", "signatures": ["gunicorn"], "type": "Application Server", "confidence": "medium"},
+    {"name": "uWSGI", "signatures": ["uWSGI"], "type": "Application Server", "confidence": "medium"},
+    {"name": "OpenResty", "signatures": ["openresty"], "type": "Web Server", "confidence": "high"},
+    {"name": "Kestrel", "signatures": ["Kestrel"], "type": "Application Server", "confidence": "medium"}
+  ],
+  "languages": [
+    {"name": "PHP", "signatures": ["PHP/", "php", "x-powered-by: php"], "type": "Language", "confidence": "high"},
+    {"name": "Python", "signatures": ["Python/", "python", "wsgi"], "type": "Language", "confidence": "high"},
+    {"name": "Node.js", "signatures": ["Express", "node.js", "nodejs", "x-powered-by: express"], "type": "Runtime", "confidence": "high"},
+    {"name": "Ruby", "signatures": ["Ruby", "Phusion Passenger", "rack", "x-powered-by: rack"], "type": "Language", "confidence": "high"},
+    {"name": "Java", "signatures": ["Java/", "java", "servlet", "jsp"], "type": "Language", "confidence": "medium"},
+    {"name": "ASP.NET", "signatures": ["ASP.NET", "x-aspnet-version", "x-powered-by: asp.net"], "type": "Framework", "confidence": "high"},
+    {"name": "Go", "signatures": ["go-http-client", "golang"], "type": "Language", "confidence": "medium"},
+    {"name": "Dart", "signatures": ["dart"], "type": "Language", "confidence": "medium"}
+  ],
+  "cms": [
+    {"name": "WordPress", "signatures": ["wp-content", "wp-includes", "wordpress", "wp-json"], "type": "CMS", "confidence": "high"},
+    {"name": "Drupal", "signatures": ["drupal", "sites/default/files", "Drupal"], "type": "CMS", "confidence": "high"},
+    {"name": "Joomla", "signatures": ["joomla", "Joomla!", "media/system/js"], "type": "CMS", "confidence": "high"},
+    {"name": "Magento", "signatures": ["magento", "Mage", "static/frontend"], "type": "E-Commerce", "confidence": "high"},
+    {"name": "Shopify", "signatures": ["shopify", "cdn.shopify.com", "X-ShopId"], "type": "E-Commerce", "confidence": "high"},
+    {"name": "PrestaShop", "signatures": ["prestashop", "PrestaShop"], "type": "E-Commerce", "confidence": "high"},
+    {"name": "WooCommerce", "signatures": ["woocommerce", "wc-ajax"], "type": "E-Commerce", "confidence": "high"},
+    {"name": "Ghost", "signatures": ["ghost", "Ghost"], "type": "CMS", "confidence": "medium"},
+    {"name": "Strapi", "signatures": ["strapi", "x-powered-by: strapi"], "type": "Headless CMS", "confidence": "high"},
+    {"name": "Contentful", "signatures": ["contentful", "x-contentful"], "type": "Headless CMS", "confidence": "medium"}
+  ],
+  "libraries": [
+    {"name": "jQuery", "signatures": ["jquery", "jQuery"], "type": "JavaScript Library", "confidence": "high"},
+    {"name": "React", "signatures": ["react", "_reactroot", "data-reactroot"], "type": "JavaScript Framework", "confidence": "high"},
+    {"name": "Angular", "signatures": ["angular", "ng-"], "type": "JavaScript Framework", "confidence": "high"},
+    {"name": "Vue.js", "signatures": ["vue", "vuejs", "__vue__"], "type": "JavaScript Framework", "confidence": "high"},
+    {"name": "Bootstrap", "signatures": ["bootstrap", "bootstrap.css"], "type": "CSS Framework", "confidence": "high"},
+    {"name": "Tailwind CSS", "signatures": ["tailwind"], "type": "CSS Framework", "confidence": "medium"},
+    {"name": "Lodash", "signatures": ["lodash"], "type": "JavaScript Utility", "confidence": "medium"},
+    {"name": "Moment.js", "signatures": ["moment"], "type": "JavaScript Library", "confidence": "medium"},
+    {"name": "Axios", "signatures": ["axios"], "type": "HTTP Client", "confidence": "medium"},
+    {"name": "Webpack", "signatures": ["webpack", "webpackJsonp"], "type": "Build Tool", "confidence": "medium"},
+    {"name": "Sentry", "signatures": ["sentry", "sentry.io"], "type": "Error Tracking", "confidence": "medium"},
+    {"name": "Google Analytics", "signatures": ["google-analytics", "gtag", "ga("], "type": "Analytics", "confidence": "high"},
+    {"name": "Google Tag Manager", "signatures": ["googletagmanager", "gtm"], "type": "Tag Manager", "confidence": "high"},
+    {"name": "Font Awesome", "signatures": ["font-awesome", "fontawesome"], "type": "Icon Library", "confidence": "high"}
+  ],
+  "frameworks": [
+    {"name": "Laravel", "signatures": ["laravel", "laravel_session"], "type": "PHP Framework", "confidence": "high"},
+    {"name": "Django", "signatures": ["django", "csrftoken", "sessionid"], "type": "Python Framework", "confidence": "high"},
+    {"name": "Flask", "signatures": ["Werkzeug", "flask", "x-powered-by: flask"], "type": "Python Framework", "confidence": "high"},
+    {"name": "FastAPI", "signatures": ["fastapi"], "type": "Python Framework", "confidence": "medium"},
+    {"name": "Express.js", "signatures": ["Express", "x-powered-by: express", "connect.sid"], "type": "Node.js Framework", "confidence": "high"},
+    {"name": "Next.js", "signatures": ["next.js", "next", "__next"], "type": "React Framework", "confidence": "high"},
+    {"name": "Nuxt.js", "signatures": ["nuxt", "__NUXT__"], "type": "Vue Framework", "confidence": "high"},
+    {"name": "Symfony", "signatures": ["symfony", "sf_"], "type": "PHP Framework", "confidence": "high"},
+    {"name": "CodeIgniter", "signatures": ["codeigniter", "ci_session"], "type": "PHP Framework", "confidence": "high"},
+    {"name": "Ruby on Rails", "signatures": ["action_dispatch", "ruby on rails", "_rails_session"], "type": "Ruby Framework", "confidence": "high"},
+    {"name": "Spring Boot", "signatures": ["spring", "x-application-context"], "type": "Java Framework", "confidence": "high"},
+    {"name": "ASP.NET MVC", "signatures": ["aspnet.mvc", "x-aspnetmvc-version"], "type": ".NET Framework", "confidence": "high"},
+    {"name": "Spring", "signatures": ["spring", "JSESSIONID"], "type": "Java Framework", "confidence": "medium"}
+  ]
+}

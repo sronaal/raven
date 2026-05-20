@@ -1,0 +1,27 @@
+{
+  "waf_signatures": [
+    {"name": "Cloudflare", "headers": ["cf-ray", "cf-cache-status", "x-frame-options"], "cookies": ["__cfduid"]},
+    {"name": "ModSecurity", "headers": ["x-modsecurity-id", "x-modsecurity-message"]},
+    {"name": "AWS WAF", "headers": ["x-amzn-waf"]},
+    {"name": "Akamai", "headers": ["x-akamai-transformed", "x-akamai-request-id"]},
+    {"name": "Sucuri", "headers": ["x-sucuri-id", "x-sucuri-cache"]},
+    {"name": "Imperva", "headers": ["x-iinfo", "x-cdn"]},
+    {"name": "Barracuda", "headers": ["barra_counter_session"]},
+    {"name": "F5 BIG-IP", "headers": ["x-wa-info", "bigipserver"]},
+    {"name": "FortiWeb", "headers": ["fortiwafsid"]},
+    {"name": "DenyAll", "headers": ["x-denied", "sessioncookie"]}
+  ],
+  "dangerous_methods": ["PUT", "DELETE", "TRACE", "CONNECT", "PATCH"],
+  "sensitive_files": [
+    ".env", ".git/config", ".git/HEAD", "wp-config.php",
+    "config.php", "database.yml", "settings.py", "web.config",
+    "composer.json", "package.json", "robots.txt", "sitemap.xml",
+    ".htaccess", ".htpasswd", "phpinfo.php", "info.php",
+    "admin/", "phpmyadmin/", "wp-admin/", "administrator/"
+  ],
+  "security_patterns": {
+    "csrf_token": ["csrf_token", "_csrf", "csrfmiddlewaretoken", "authenticity_token"],
+    "session_cookie": ["session", "sess", "sid", "jsessionid", "phpsessid", "connect.sid"],
+    "auth_cookie": ["token", "auth", "jwt", "access_token", "refresh_token"]
+  }
+}

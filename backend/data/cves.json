@@ -1,0 +1,224 @@
+{
+  "cves": [
+    {
+      "id": "CVE-2021-41773",
+      "component": "Apache",
+      "title": "Apache 2.4.49 Path Traversal and RCE",
+      "severity": "CRITICAL",
+      "cvss_score": 9.8,
+      "affected_versions": ["2.4.49"],
+      "description": "A flaw in Apache HTTP Server 2.4.49 allows path traversal and remote code execution on systems where directories outside the document root are not protected by 'Require all denied'.",
+      "solution": "Upgrade to Apache 2.4.51 or later",
+      "references": ["https://nvd.nist.gov/vuln/detail/CVE-2021-41773"]
+    },
+    {
+      "id": "CVE-2021-42013",
+      "component": "Apache",
+      "title": "Apache 2.4.50 Path Traversal",
+      "severity": "CRITICAL",
+      "cvss_score": 9.8,
+      "affected_versions": ["2.4.50"],
+      "description": "Apache HTTP Server 2.4.50 path traversal and file disclosure vulnerability. The fix for CVE-2021-41773 was insufficient.",
+      "solution": "Upgrade to Apache 2.4.51 or later",
+      "references": ["https://nvd.nist.gov/vuln/detail/CVE-2021-42013"]
+    },
+    {
+      "id": "CVE-2023-44487",
+      "component": "Nginx",
+      "title": "HTTP/2 Rapid Reset Attack",
+      "severity": "HIGH",
+      "cvss_score": 7.5,
+      "affected_versions": ["<=1.25.2"],
+      "description": "HTTP/2 rapid reset attack allows denial of service by rapidly creating and canceling streams, overwhelming server resources.",
+      "solution": "Update Nginx and apply rate limiting configurations",
+      "references": ["https://nvd.nist.gov/vuln/detail/CVE-2023-44487"]
+    },
+    {
+      "id": "CVE-2021-23017",
+      "component": "Nginx",
+      "title": "Nginx Resolver Vulnerability",
+      "severity": "HIGH",
+      "cvss_score": 7.7,
+      "affected_versions": ["<=1.20.0"],
+      "description": "Off-by-one heap write in the resolver allowing remote code execution when processing DNS responses.",
+      "solution": "Upgrade to Nginx 1.21.0 or later",
+      "references": ["https://nvd.nist.gov/vuln/detail/CVE-2021-23017"]
+    },
+    {
+      "id": "CVE-2021-32682",
+      "component": "PHP",
+      "title": "PHP Phar Deserialization",
+      "severity": "HIGH",
+      "cvss_score": 7.8,
+      "affected_versions": ["<=8.0.7"],
+      "description": "Phar deserialization vulnerability in PHP allows local privilege escalation through crafted PHAR files.",
+      "solution": "Upgrade to PHP 8.0.8 or later",
+      "references": ["https://nvd.nist.gov/vuln/detail/CVE-2021-32682"]
+    },
+    {
+      "id": "CVE-2024-4577",
+      "component": "PHP",
+      "title": "PHP CGI Argument Injection",
+      "severity": "CRITICAL",
+      "cvss_score": 9.8,
+      "affected_versions": ["<=8.3.7"],
+      "description": "PHP CGI argument injection on Windows systems allows remote code execution through crafted requests.",
+      "solution": "Upgrade to PHP 8.3.8, 8.2.21, or 8.1.29",
+      "references": ["https://nvd.nist.gov/vuln/detail/CVE-2024-4577"]
+    },
+    {
+      "id": "CVE-2023-46804",
+      "component": "WordPress",
+      "title": "WordPress Plugin SQL Injection",
+      "severity": "HIGH",
+      "cvss_score": 8.6,
+      "affected_versions": ["<=6.4.2"],
+      "description": "SQL injection vulnerability in WordPress core affecting certain plugin interactions and database queries.",
+      "solution": "Update WordPress to the latest version",
+      "references": ["https://nvd.nist.gov/vuln/detail/CVE-2023-46804"]
+    },
+    {
+      "id": "CVE-2023-28120",
+      "component": "WordPress",
+      "title": "WordPress Stored XSS",
+      "severity": "MEDIUM",
+      "cvss_score": 6.1,
+      "affected_versions": ["<=6.1.1"],
+      "description": "Stored cross-site scripting vulnerability in WordPress allows authenticated attackers to inject malicious scripts.",
+      "solution": "Update WordPress to version 6.2 or later",
+      "references": ["https://nvd.nist.gov/vuln/detail/CVE-2023-28120"]
+    },
+    {
+      "id": "CVE-2023-38205",
+      "component": "Django",
+      "title": "Django ReDoS Vulnerability",
+      "severity": "MEDIUM",
+      "cvss_score": 5.9,
+      "affected_versions": ["<=4.2.3"],
+      "description": "Regular expression denial of service in Django's URLValidator and EmailValidator.",
+      "solution": "Upgrade to Django 4.2.4 or later",
+      "references": ["https://nvd.nist.gov/vuln/detail/CVE-2023-38205"]
+    },
+    {
+      "id": "CVE-2023-36053",
+      "component": "Django",
+      "title": "Django DoS via File Upload",
+      "severity": "HIGH",
+      "cvss_score": 7.5,
+      "affected_versions": ["<=4.2.2"],
+      "description": "Denial of service vulnerability through excessive memory consumption when handling large file uploads.",
+      "solution": "Upgrade to Django 4.2.3 or later",
+      "references": ["https://nvd.nist.gov/vuln/detail/CVE-2023-36053"]
+    },
+    {
+      "id": "CVE-2024-21538",
+      "component": "Express.js",
+      "title": "Express.js Open Redirect",
+      "severity": "MEDIUM",
+      "cvss_score": 6.1,
+      "affected_versions": ["<=4.18.2"],
+      "description": "Open redirect vulnerability in Express.js allows attackers to redirect users to malicious websites.",
+      "solution": "Update Express.js and validate redirect URLs",
+      "references": ["https://nvd.nist.gov/vuln/detail/CVE-2024-21538"]
+    },
+    {
+      "id": "CVE-2024-29041",
+      "component": "Express.js",
+      "title": "Express.js XSS via res.locals",
+      "severity": "MEDIUM",
+      "cvss_score": 5.4,
+      "affected_versions": ["<=4.19.1"],
+      "description": "Cross-site scripting vulnerability when using res.locals with untrusted input in Express.js.",
+      "solution": "Update Express.js and sanitize all user input",
+      "references": ["https://nvd.nist.gov/vuln/detail/CVE-2024-29041"]
+    },
+    {
+      "id": "CVE-2023-46695",
+      "component": "Flask",
+      "title": "Flask Debug Mode Information Disclosure",
+      "severity": "MEDIUM",
+      "cvss_score": 5.3,
+      "affected_versions": ["<=2.3.3"],
+      "description": "Flask debug mode may expose sensitive information including environment variables and stack traces.",
+      "solution": "Disable debug mode in production (debug=False)",
+      "references": ["https://nvd.nist.gov/vuln/detail/CVE-2023-46695"]
+    },
+    {
+      "id": "CVE-2023-48665",
+      "component": "Flask",
+      "title": "Flask Cookie Parsing Vulnerability",
+      "severity": "LOW",
+      "cvss_score": 3.7,
+      "affected_versions": ["<=3.0.0"],
+      "description": "Improper cookie parsing in Flask could lead to session fixation attacks.",
+      "solution": "Upgrade to Flask 3.0.1 or later",
+      "references": ["https://nvd.nist.gov/vuln/detail/CVE-2023-48665"]
+    },
+    {
+      "id": "CVE-2024-34064",
+      "component": "Laravel",
+      "title": "Laravel RCE via Ignition",
+      "severity": "CRITICAL",
+      "cvss_score": 9.8,
+      "affected_versions": ["<=10.48.8"],
+      "description": "Remote code execution vulnerability in Laravel Ignition debug page when debug mode is enabled.",
+      "solution": "Disable debug mode in production, update Laravel",
+      "references": ["https://nvd.nist.gov/vuln/detail/CVE-2024-34064"]
+    },
+    {
+      "id": "CVE-2023-30801",
+      "component": "Flask",
+      "title": "Flask Session Cookie Vulnerability",
+      "severity": "HIGH",
+      "cvss_score": 7.5,
+      "affected_versions": ["<=2.3.2"],
+      "description": "Flask session cookies may be vulnerable to tampering when using default secret key configurations.",
+      "solution": "Use a strong SECRET_KEY and upgrade Flask",
+      "references": ["https://nvd.nist.gov/vuln/detail/CVE-2023-30801"]
+    },
+    {
+      "id": "CVE-2023-25136",
+      "component": "Django",
+      "title": "Django SQL Injection via Trunc",
+      "severity": "HIGH",
+      "cvss_score": 8.0,
+      "affected_versions": ["<=4.1.7"],
+      "description": "SQL injection vulnerability in Django's Trunc and Extract database functions.",
+      "solution": "Upgrade to Django 4.1.8 or later",
+      "references": ["https://nvd.nist.gov/vuln/detail/CVE-2023-25136"]
+    },
+    {
+      "id": "CVE-2024-22195",
+      "component": "jQuery",
+      "title": "jQuery XSS via Cross-Domain Requests",
+      "severity": "MEDIUM",
+      "cvss_score": 6.1,
+      "affected_versions": ["<=3.7.1"],
+      "description": "Cross-site scripting vulnerability in jQuery when making cross-domain AJAX requests with JSONP.",
+      "solution": "Update jQuery to version 3.7.2 or later",
+      "references": ["https://nvd.nist.gov/vuln/detail/CVE-2024-22195"]
+    },
+    {
+      "id": "CVE-2023-26141",
+      "component": "React",
+      "title": "React XSS via Server Components",
+      "severity": "MEDIUM",
+      "cvss_score": 5.4,
+      "affected_versions": ["<=18.2.0"],
+      "description": "Cross-site scripting vulnerability in React Server Components when rendering untrusted content.",
+      "solution": "Update React and sanitize all user-generated content",
+      "references": ["https://nvd.nist.gov/vuln/detail/CVE-2023-26141"]
+    },
+    {
+      "id": "CVE-2024-27351",
+      "component": "IIS",
+      "title": "IIS HTTP.sys Remote Code Execution",
+      "severity": "CRITICAL",
+      "cvss_score": 9.8,
+      "affected_versions": ["<=10.0"],
+      "description": "Remote code execution vulnerability in IIS HTTP.sys when processing specially crafted HTTP requests.",
+      "solution": "Apply latest Windows security updates",
+      "references": ["https://nvd.nist.gov/vuln/detail/CVE-2024-27351"]
+    }
+  ]
+}
