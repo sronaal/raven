@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Shield, AlertTriangle, Lock, Search, History, LayoutDashboard, BarChart3 } from 'lucide-react'
+import { Shield, AlertTriangle, Lock, Search, History, LayoutDashboard, BarChart3, Sun, Moon } from 'lucide-react'
 import URLInput from './components/URLInput'
 import Disclaimer from './components/Disclaimer'
 import ProgressBar from './components/ProgressBar'
@@ -27,6 +27,7 @@ function App() {
     }
   })
   const [page, setPage] = useState('scanner')
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') !== 'light')
 
   const handleScan = async (scanUrl, level = 'full') => {
     setLoading(true)
@@ -77,10 +78,10 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
+    <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950' : 'bg-gradient-to-br from-gray-100 via-white to-gray-100'}`}>
       <Disclaimer visible={showDisclaimer} onAccept={() => setShowDisclaimer(false)} />
 
-      <header className="border-b border-gray-800 bg-gray-950/80 backdrop-blur-sm sticky top-0 z-40">
+      <header className={`border-b backdrop-blur-sm sticky top-0 z-40 ${darkMode ? 'border-gray-800 bg-gray-950/80' : 'border-gray-200 bg-white/80'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -88,8 +89,8 @@ function App() {
                 <Shield className="w-8 h-8 text-emerald-400" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white">URL Security Scanner</h1>
-                <p className="text-xs text-gray-500">Multi-level security analysis tool</p>
+                <h1 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>URL Security Scanner</h1>
+                <p className={`text-xs ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Multi-level security analysis tool</p>
               </div>
             </div>
             {scanHistory.length > 0 && (
@@ -107,6 +108,9 @@ function App() {
               </button>
               <button onClick={() => setPage('history')} className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${page === 'history' ? 'bg-emerald-600/20 text-emerald-400' : 'text-gray-400 hover:text-white'}`}>
                 <History className="w-4 h-4 inline mr-1" />History
+              </button>
+              <button onClick={() => { setDarkMode(d => !d); localStorage.setItem('theme', darkMode ? 'light' : 'dark') }} className="p-2 rounded-lg text-gray-400 hover:text-white transition-colors ml-1">
+                {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               </button>
             </div>
           </div>
