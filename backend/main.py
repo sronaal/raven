@@ -9,6 +9,10 @@ from slowapi.errors import RateLimitExceeded
 from starlette.responses import JSONResponse
 
 from routes.scan import router as scan_router, limiter
+from routes.history import router as history_router
+from services.scan_store import init_db
+
+init_db()
 
 app = FastAPI(
     title="URL Security Scanner",
@@ -27,6 +31,7 @@ app.add_middleware(
 )
 
 app.include_router(scan_router, prefix="/api", tags=["scanner"])
+app.include_router(history_router, prefix="/api", tags=["history"])
 
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_handler(request, exc):

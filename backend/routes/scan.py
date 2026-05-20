@@ -13,6 +13,7 @@ from services.tech_detector import detect_technologies
 from services.vulnerability_checker import check_vulnerabilities, calculate_vulnerability_score, fetch_external_cves
 from services.ssl_analyzer import analyze_ssl
 from services.parameter_analyzer import analyze_parameters
+from services.scan_store import save_scan
 from config.settings import BASE_DIR, RATE_LIMIT
 from routes.models import ScanRequest
 
@@ -80,7 +81,7 @@ async def scan_level1(request: Request):
     technologies = detect_technologies(headers, body_content)
     server_info = extract_server_info(technologies)
 
-    return {
+    result = {
         "url": url,
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "status": "success",
@@ -89,6 +90,9 @@ async def scan_level1(request: Request):
         "headers": header_analysis,
         "security_score": header_analysis["score"],
     }
+    client_ip_str = request.client.host if request.client else ""
+    result["scan_id"] = save_scan(url, result["timestamp"], "level1", {"nivel1": result, "resumen_general": {"total_score": header_analysis["score"]}}, client_ip_str)
+    return result
 
 @router.post("/scan/level2")
 @limiter.limit(RATE_LIMIT)
@@ -116,7 +120,7 @@ async def scan_level2(request: Request):
     waf_detected = detect_waf(headers)
     vuln_score = calculate_vulnerability_score(unique_vulnerabilities)
 
-    return {
+    result = {
         "url": url,
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "status": "success",
@@ -126,6 +130,9 @@ async def scan_level2(request: Request):
         "waf_detected": waf_detected,
         "vulnerability_score": vuln_score,
     }
+    client_ip_str = request.client.host if request.client else ""
+    result["scan_id"] = save_scan(url, result["timestamp"], "level2", {"nivel2": result, "resumen_general": {"total_score": vuln_score}}, client_ip_str)
+    return result
 
 @router.post("/scan/level3")
 @limiter.limit(RATE_LIMIT)
@@ -142,7 +149,7 @@ async def scan_level3(request: Request):
     csrf_detected = detect_csrf_protection(headers, body_content)
     rate_limit_detected = detect_rate_limit(headers)
 
-    return {
+    result = {
         "url": url,
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "status": "success",
@@ -154,6 +161,9 @@ async def scan_level3(request: Request):
         "rate_limiting": rate_limit_detected,
         "parameter_score": parameter_analysis["score"],
     }
+    client_ip_str = request.client.host if request.client else ""
+    result["scan_id"] = save_scan(url, result["timestamp"], "level3", {"nivel3": result, "resumen_general": {"total_score": parameter_analysis["score"]}}, client_ip_str)
+    return result
 
 @router.post("/scan/full")
 @limiter.limit(RATE_LIMIT)
@@ -182,7 +192,7 @@ async def scan_full(request: Request):
 
     recommendations = generate_recommendations(header_analysis, vulnerabilities, parameter_analysis)
 
-    return {
+    result = {
         "url": url,
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "status": "success",
@@ -218,6 +228,13 @@ async def scan_full(request: Request):
             ],
         },
     }
+
+    client_ip_str = request.client.host if request.client else ""
+    scan_id = save_scan(url, result["timestamp"], "full", result, client_ip_str)
+    result["scan_id"] = scan_id
+
+    return result
+
 
 def detect_waf(headers: dict) -> dict:
     sig_file = BASE_DIR / "data" / "signatures.json"
