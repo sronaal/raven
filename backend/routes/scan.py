@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from datetime import datetime, timezone
+import json
 import logging
+from pathlib import Path
 
 from utils.validators import validate_url, normalize_url
 from services.http_fetcher import fetch_url
@@ -9,6 +11,7 @@ from services.tech_detector import detect_technologies
 from services.vulnerability_checker import check_vulnerabilities, calculate_vulnerability_score, fetch_external_cves
 from services.ssl_analyzer import analyze_ssl
 from services.parameter_analyzer import analyze_parameters
+from config.settings import BASE_DIR
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -224,10 +227,6 @@ async def scan_full(request: dict):
     }
 
 def detect_waf(headers: dict) -> dict:
-    from services.parameter_analyzer import json
-    from pathlib import Path
-    from config.settings import BASE_DIR
-
     sig_file = BASE_DIR / "data" / "signatures.json"
     if not sig_file.exists():
         return {"detected": False}
