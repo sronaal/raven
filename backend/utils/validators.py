@@ -1,7 +1,9 @@
 import json
 import ipaddress
+import socket
 from urllib.parse import urlparse
 from config.settings import BLOCKED_IP_RANGES, ALLOWED_SCHEMES
+
 
 def validate_url(url: str) -> tuple[bool, str]:
     if not url:
@@ -23,9 +25,25 @@ def validate_url(url: str) -> tuple[bool, str]:
 
     return True, "Valid URL"
 
+
+def validate_resolved_ip(hostname: str, resolved_url: str) -> tuple[bool, str]:
+    try:
+        parsed = urlparse(resolved_url)
+        final_hostname = parsed.hostname or hostname
+        ip = socket.gethostbyname(final_hostname)
+        ip_obj = ipaddress.ip_address(ip)
+        for range_str in BLOCKED_IP_RANGES:
+            if ip_obj in ipaddress.ip_network(range_str):
+                return False, f"Resolved IP {ip} is in blocked range (DNS rebinding protection)"
+        if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_reserved:
+            return False, f"Resolved IP {ip} is private/loopback/reserved (DNS rebinding protection)"
+        return True, ""
+    except Exception:
+        return False, "Could not resolve final URL IP (DNS rebinding protection)"
+
+
 def is_private_ip(hostname: str) -> bool:
     try:
-        import socket
         ip = socket.gethostbyname(hostname)
         ip_obj = ipaddress.ip_address(ip)
         for range_str in BLOCKED_IP_RANGES:
@@ -34,6 +52,7 @@ def is_private_ip(hostname: str) -> bool:
         return ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_reserved
     except Exception:
         return False
+
 
 def normalize_url(url: str) -> str:
     parsed = urlparse(url)

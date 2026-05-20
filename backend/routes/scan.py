@@ -6,7 +6,7 @@ from pathlib import Path
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
-from utils.validators import validate_url, normalize_url
+from utils.validators import validate_url, normalize_url, validate_resolved_ip
 from services.http_fetcher import fetch_url
 from services.header_analyzer import analyze_headers
 from services.tech_detector import detect_technologies
@@ -34,6 +34,12 @@ async def validate_and_fetch(url: str, level_name: str, client_ip: str = "") -> 
     if "error" in fetch_result:
         logger.error({"event": "fetch_error", "url": url, "error": fetch_result["error"], "client_ip": client_ip})
         raise HTTPException(status_code=502, detail=fetch_result["error"])
+
+    resolved_url = fetch_result.get("url", url)
+    ip_valid, ip_msg = validate_resolved_ip(url, resolved_url)
+    if not ip_valid:
+        logger.warning({"event": "dns_rebinding_blocked", "url": url, "resolved_url": resolved_url, "reason": ip_msg, "client_ip": client_ip})
+        raise HTTPException(status_code=403, detail=ip_msg)
 
     logger.info({"event": "scan_completed", "level": level_name, "url": url, "client_ip": client_ip})
     return url, fetch_result
