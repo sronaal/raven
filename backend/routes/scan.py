@@ -14,6 +14,7 @@ from services.vulnerability_checker import check_vulnerabilities, calculate_vuln
 from services.ssl_analyzer import analyze_ssl
 from services.parameter_analyzer import analyze_parameters
 from config.settings import BASE_DIR, RATE_LIMIT
+from routes.models import ScanRequest
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -23,7 +24,8 @@ limiter = Limiter(key_func=get_remote_address)
 @limiter.limit(RATE_LIMIT)
 async def scan_level1(request: Request):
     body = await request.json()
-    url = body.get("url", "")
+    scan_req = ScanRequest(**body)
+    url = scan_req.url
     is_valid, message = validate_url(url)
     if not is_valid:
         raise HTTPException(status_code=400, detail=message)
@@ -65,7 +67,8 @@ async def scan_level1(request: Request):
 @limiter.limit(RATE_LIMIT)
 async def scan_level2(request: Request):
     body = await request.json()
-    url = body.get("url", "")
+    scan_req = ScanRequest(**body)
+    url = scan_req.url
     is_valid, message = validate_url(url)
     if not is_valid:
         raise HTTPException(status_code=400, detail=message)
@@ -123,7 +126,8 @@ async def scan_level2(request: Request):
 @limiter.limit(RATE_LIMIT)
 async def scan_level3(request: Request):
     body = await request.json()
-    url = body.get("url", "")
+    scan_req = ScanRequest(**body)
+    url = scan_req.url
     is_valid, message = validate_url(url)
     if not is_valid:
         raise HTTPException(status_code=400, detail=message)
@@ -160,7 +164,8 @@ async def scan_level3(request: Request):
 @limiter.limit(RATE_LIMIT)
 async def scan_full(request: Request):
     body = await request.json()
-    url = body.get("url", "")
+    scan_req = ScanRequest(**body)
+    url = scan_req.url
     is_valid, message = validate_url(url)
     if not is_valid:
         raise HTTPException(status_code=400, detail=message)
