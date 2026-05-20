@@ -6,6 +6,8 @@ import ProgressBar from './components/ProgressBar'
 import ResultsTabs from './components/ResultsTabs'
 import { scanFull, scanLevel } from './utils/api'
 
+const MAX_HISTORY = 10
+
 function App() {
   const [url, setUrl] = useState('')
   const [loading, setLoading] = useState(false)
@@ -16,7 +18,8 @@ function App() {
   const [showDisclaimer, setShowDisclaimer] = useState(true)
   const [scanHistory, setScanHistory] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem('scanHistory') || '[]')
+      const stored = JSON.parse(localStorage.getItem('scanHistory') || '[]')
+      return Array.isArray(stored) ? stored.slice(0, MAX_HISTORY) : []
     } catch {
       return []
     }
@@ -40,7 +43,7 @@ function App() {
 
         const newHistory = [
           { url: scanUrl, timestamp: new Date().toISOString(), score: data.resumen_general?.total_score },
-          ...scanHistory.slice(0, 9)
+          ...scanHistory.slice(0, MAX_HISTORY - 1)
         ]
         setScanHistory(newHistory)
         localStorage.setItem('scanHistory', JSON.stringify(newHistory))
