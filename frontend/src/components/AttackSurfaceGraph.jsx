@@ -10,65 +10,116 @@ function riskIcon(risk) {
   }
 }
 
-function AttackSurfaceGraph({ data }) {
-  const [filter, setFilter] = useState('all')
+function AttackSurfaceGraph({ data, darkMode }) {
+  const [riskFilter, setRiskFilter] = useState('all')
+
   if (!data) return null
 
-  const nodes = (data.nodes || []).filter(n => filter === 'all' || n.risk === filter)
+  const nodes = data.nodes || []
   const edges = data.edges || []
+  const stats = data.stats || {}
+
+  const filtered = riskFilter === 'all' ? nodes : nodes.filter(n => (n.risk || 'low').toUpperCase() === riskFilter)
+
+  const cardCls = darkMode ? 'card' : 'card-light'
+  const txt = darkMode ? 'text-white' : 'text-gray-900'
+  const txtMuted = darkMode ? 'text-gray-400' : 'text-gray-500'
 
   return (
     <div className="space-y-6">
+      <div className={`${cardCls}`}>
+        <h2 className={`text-lg font-bold flex items-center gap-2 ${txt}`}>
+          <Network className="w-5 h-5 text-orange-400" />
+          Attack Surface
+        </h2>
+        <p className={txtMuted}>Discovered nodes and connections mapped during analysis</p>
+      </div>
+
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="card text-center">
+        <div className={`${cardCls} text-center`}>
           <Network className="w-6 h-6 text-blue-400 mx-auto mb-1" />
-          <p className="text-2xl font-bold text-white">{data.total_nodes}</p>
-          <p className="text-xs text-gray-400">Total Nodes</p>
+          <p className={`text-2xl font-bold ${txt}`}>{stats.total_nodes || nodes.length}</p>
+          <p className={`text-xs ${txtMuted}`}>Total Nodes</p>
         </div>
-        <div className="card text-center">
-          <p className="text-2xl font-bold text-red-400">{data.risk_counts.CRITICAL}</p>
-          <p className="text-xs text-gray-400">Critical</p>
+        <div className={`${cardCls} text-center`}>
+          <ShieldAlert className="w-6 h-6 text-red-400 mx-auto mb-1" />
+          <p className="text-2xl font-bold text-red-400">{stats.critical || 0}</p>
+          <p className={`text-xs ${txtMuted}`}>Critical</p>
         </div>
-        <div className="card text-center">
-          <p className="text-2xl font-bold text-orange-400">{data.risk_counts.HIGH}</p>
-          <p className="text-xs text-gray-400">High Risk</p>
+        <div className={`${cardCls} text-center`}>
+          <AlertTriangle className="w-6 h-6 text-orange-400 mx-auto mb-1" />
+          <p className="text-2xl font-bold text-orange-400">{stats.high || 0}</p>
+          <p className={`text-xs ${txtMuted}`}>High Risk</p>
         </div>
-        <div className="card text-center">
-          <span className={`text-2xl font-bold ${data.surface_score >= 60 ? 'text-emerald-400' : 'text-red-400'}`}>{data.surface_score}</span>
-          <p className="text-xs text-gray-400">Surface Score</p>
+        <div className={`${cardCls} text-center`}>
+          <Shield className="w-6 h-6 text-emerald-400 mx-auto mb-1" />
+          <p className="text-2xl font-bold text-emerald-400">{stats.low || 0}</p>
+          <p className={`text-xs ${txtMuted}`}>Low Risk</p>
         </div>
       </div>
 
-      <div className="flex gap-2">
-        {['all', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].map(r => (
-          <button key={r} onClick={() => setFilter(r)} className={`px-3 py-1 rounded text-xs ${filter === r ? 'bg-emerald-600/30 text-emerald-400' : 'bg-gray-800 text-gray-400 hover:text-white'}`}>
-            {r === 'all' ? 'All' : r}
+      <div className="flex flex-wrap gap-2">
+        {['all', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].map(level => (
+          <button
+            key={level}
+            onClick={() => setRiskFilter(level)}
+            className={`px-3 py-1.5 rounded-lg text-xs transition-colors ${
+              riskFilter === level
+                ? 'bg-orange-600/30 text-orange-400'
+                : `${darkMode ? 'bg-gray-800 text-gray-400 hover:text-white' : 'bg-gray-100 text-gray-600 hover:text-gray-900'}`
+            }`}
+          >
+            {level === 'all' ? 'All' : level}
           </button>
         ))}
       </div>
 
-      <div className="card">
-        <h3 className="text-white font-medium mb-3">Attack Surface Nodes ({nodes.length})</h3>
-        <div className="space-y-1 max-h-96 overflow-y-auto">
-          {nodes.map((n, i) => (
-            <div key={i} className="flex items-center gap-2 py-1 px-2 text-sm hover:bg-gray-800/50 rounded">
-              {riskIcon(n.risk)}
-              <span className="text-white truncate flex-1 font-mono text-xs" title={n.full_url || n.label}>{n.label}</span>
-              <span className="text-gray-500 text-xs">{n.type}</span>
-              <span className={`badge ${n.risk === 'CRITICAL' ? 'badge-critical' : n.risk === 'HIGH' ? 'badge-high' : n.risk === 'MEDIUM' ? 'badge-medium' : 'badge-low'}`}>{n.risk}</span>
-            </div>
-          ))}
+      {stats.risk_summary?.length > 0 && filtered.length === 0 && (
+        <div className={`${cardCls} text-center py-8`}>
+          <ShieldCheck className="w-10 h-10 text-emerald-400 mx-auto mb-3" />
+          <p className={`font-medium ${txt}`}>No {riskFilter.toLowerCase()} risk nodes</p>
+          <p className={`text-sm ${txtMuted}`}>Try selecting a different risk level filter</p>
         </div>
-      </div>
+      )}
 
-      <div className="card">
-        <h3 className="text-white font-medium mb-3">Connections ({edges.length})</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs">
-          {edges.slice(0, 30).map((e, i) => (
-            <div key={i} className="text-gray-400 font-mono truncate">{e.from} → {e.to}</div>
-          ))}
+      {filtered.length > 0 && (
+        <div className={`${cardCls}`}>
+          <h3 className={`font-medium mb-3 ${txt}`}>Nodes ({filtered.length})</h3>
+          <div className="space-y-2 max-h-96 overflow-y-auto">
+            {filtered.map((node, idx) => (
+              <div key={idx} className={`flex items-center gap-3 p-3 rounded-lg ${darkMode ? 'bg-gray-800/50' : 'bg-orange-50'}`}>
+                {riskIcon(node.risk)}
+                <div className="flex-1 min-w-0">
+                  <p className={`text-sm font-medium truncate ${txt}`}>{node.label || node.url || node.name}</p>
+                  <p className={`text-xs ${txtMuted}`}>{node.type} {node.component && `• ${node.component}`}</p>
+                </div>
+                <span className={`badge ${node.risk === 'CRITICAL' ? 'badge-critical' : node.risk === 'HIGH' ? 'badge-high' : node.risk === 'MEDIUM' ? 'badge-medium' : 'badge-low'}`}>
+                  {node.risk}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
+
+      {edges.length > 0 && (
+        <div className={`${cardCls}`}>
+          <h3 className={`font-medium mb-3 ${txt}`}>Connections ({edges.length})</h3>
+          <div className="space-y-1 max-h-48 overflow-y-auto">
+            {edges.slice(0, 30).map((edge, idx) => (
+              <div key={idx} className={`flex items-center gap-2 text-xs py-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                <span className="font-mono">{edge.source || edge.from}</span>
+                <span className="text-gray-600">→</span>
+                <span className="font-mono">{edge.target || edge.to}</span>
+                {edge.label && <span className={txtMuted}>({edge.label})</span>}
+              </div>
+            ))}
+            {edges.length > 30 && (
+              <p className={`text-xs text-center pt-2 ${txtMuted}`}>+ {edges.length - 30} more connections</p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

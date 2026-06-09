@@ -1,6 +1,6 @@
 import { Shield, ShieldCheck, XCircle, CheckCircle } from 'lucide-react'
 
-function ComplianceReport({ data }) {
+function ComplianceReport({ data, darkMode }) {
   if (!data) return null
 
   const frameworks = [
@@ -9,41 +9,59 @@ function ComplianceReport({ data }) {
     { key: 'hipaa', name: 'HIPAA', icon: '🏥' },
   ]
 
+  const cardCls = darkMode ? 'card' : 'card-light'
+  const txt = darkMode ? 'text-white' : 'text-gray-900'
+  const txtMuted = darkMode ? 'text-gray-400' : 'text-gray-500'
+
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-3 gap-4">
-        {frameworks.map(fw => {
-          const fwData = data[fw.key]
+      <div className={`${cardCls}`}>
+        <h2 className={`text-lg font-bold flex items-center gap-2 ${txt}`}>
+          <Shield className="w-5 h-5 text-orange-400" />
+          Compliance Check
+        </h2>
+        <p className={txtMuted}>Security posture evaluated against major compliance frameworks</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {frameworks.map(({ key, name }) => {
+          const fw = data[key]
           return (
-            <div key={fw.key} className="card text-center">
-              <p className="text-2xl mb-1">{fw.icon}</p>
-              <p className="text-lg font-bold text-white">{fw.name}</p>
-              <p className={`text-3xl font-bold ${fwData.score >= 75 ? 'text-emerald-400' : fwData.score >= 50 ? 'text-yellow-400' : 'text-red-400'}`}>{fwData.score}%</p>
-              <p className="text-xs text-gray-400">{fwData.passed}/{fwData.total} passed</p>
+            <div key={key} className={`${cardCls}`}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className={`font-semibold ${txt}`}>{name}</h3>
+                <span className="text-2xl">{key === 'gdpr' ? '🇪🇺' : key === 'pci_dss' ? '💳' : '🏥'}</span>
+              </div>
+              {fw ? (
+                <>
+                  <div className="flex items-end gap-2 mb-4">
+                    <span className={`text-3xl font-bold ${fw.score >= 70 ? 'text-emerald-400' : fw.score >= 40 ? 'text-yellow-400' : 'text-red-400'}`}>
+                      {fw.score}%
+                    </span>
+                    <span className={`text-sm mb-1 ${txtMuted}`}>compliance</span>
+                  </div>
+                  {fw.checks?.length > 0 && (
+                    <div className="space-y-1">
+                      {fw.checks.map((check, i) => (
+                        <div key={i} className="flex items-center gap-2 text-xs">
+                          {check.passed ? (
+                            <CheckCircle className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                          ) : (
+                            <XCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+                          )}
+                          <span className={darkMode ? 'text-gray-300' : 'text-gray-700'}>{check.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className={txtMuted}>No data available</p>
+              )}
             </div>
           )
         })}
       </div>
-
-      {frameworks.map(fw => {
-        const fwData = data[fw.key]
-        return (
-          <div key={fw.key} className="card">
-            <h3 className="text-white font-medium mb-3">{fw.icon} {fw.name} Compliance</h3>
-            <div className="space-y-2">
-              {fwData.checks.map((c, i) => (
-                <div key={i} className={`flex items-start gap-3 p-3 rounded ${c.passed ? 'bg-emerald-950/30' : 'bg-red-950/30'}`}>
-                  {c.passed ? <CheckCircle className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" /> : <XCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />}
-                  <div>
-                    <p className="text-sm font-medium text-white">{c.requirement}</p>
-                    <p className="text-xs text-gray-400">{c.detail}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )
-      })}
     </div>
   )
 }

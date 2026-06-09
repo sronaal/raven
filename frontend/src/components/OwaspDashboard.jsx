@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Shield, ShieldAlert, ShieldCheck, ChevronDown, ChevronRight } from 'lucide-react'
+import ScoreGauge from './ScoreGauge'
 
 function severityColor(sev) {
   switch (sev) {
@@ -11,90 +12,83 @@ function severityColor(sev) {
   }
 }
 
-function scoreColor(score) {
-  if (score >= 80) return 'text-emerald-400'
-  if (score >= 60) return 'text-green-400'
-  if (score >= 40) return 'text-yellow-400'
-  if (score >= 20) return 'text-orange-400'
-  return 'text-red-400'
-}
-
-function OwaspDashboard({ data }) {
-  const [expanded, setExpanded] = useState({})
+function OwaspDashboard({ data, darkMode }) {
+  const [expandedCategory, setExpandedCategory] = useState(null)
 
   if (!data) return null
 
-  const categories = data.categories || {}
+  const categories = data.categories || []
+  const overallScore = data.overall_score || 0
+  const cardCls = darkMode ? 'card' : 'card-light'
+  const txt = darkMode ? 'text-white' : 'text-gray-900'
+  const txtMuted = darkMode ? 'text-gray-400' : 'text-gray-500'
 
   return (
     <div className="space-y-6">
-      <div className="card text-center">
-        <div className="relative inline-flex items-center justify-center" style={{ width: 120, height: 120 }}>
-          <svg width={120} height={120} className="transform -rotate-90">
-            <circle cx={60} cy={60} r={50} fill="none" stroke="#374151" strokeWidth="10" />
-            <circle cx={60} cy={60} r={50} fill="none" stroke={data.overall_score >= 60 ? '#10b981' : data.overall_score >= 40 ? '#eab308' : '#ef4444'} strokeWidth="10" strokeLinecap="round"
-              strokeDasharray={2 * Math.PI * 50} strokeDashoffset={2 * Math.PI * 50 - (data.overall_score / 100) * 2 * Math.PI * 50}
-              className="transition-all duration-1000" />
-          </svg>
-          <div className="absolute flex flex-col items-center">
-            <span className={`text-3xl font-bold ${scoreColor(data.overall_score)}`}>{data.overall_score}</span>
-            <span className="text-xs text-gray-400">/ 100</span>
-          </div>
+      <div className={`${cardCls} flex flex-col sm:flex-row items-center gap-6`}>
+        <div className="relative" style={{ width: 100, height: 100 }}>
+          <ScoreGauge score={overallScore} size={100} darkMode={darkMode} />
         </div>
-        <h3 className="text-lg font-bold text-white mt-2">OWASP Top 10 Assessment</h3>
-        <p className="text-sm text-gray-400">{data.total_findings} findings across {Object.keys(categories).length} categories</p>
-        <span className={`badge mt-2 ${data.risk_level === 'CRITICAL' ? 'badge-critical' : data.risk_level === 'HIGH' ? 'badge-high' : data.risk_level === 'MEDIUM' ? 'badge-medium' : 'badge-safe'}`}>
-          {data.risk_level} Risk
-        </span>
+        <div>
+          <h2 className={`text-lg font-bold ${txt}`}>OWASP Top 10 Security Analysis</h2>
+          <p className={txtMuted}>Overall security posture based on OWASP Top 10 (2021) categories</p>
+        </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        {Object.entries(categories).map(([key, cat]) => (
-          <div key={key} className="card text-center p-3">
-            <p className={`text-2xl font-bold ${scoreColor(cat.score)}`}>{cat.score}</p>
-            <p className="text-xs text-gray-400 mt-1">{cat.name.split(' - ')[0]}</p>
-            <p className="text-xs text-gray-500">{cat.findings.length} findings</p>
-          </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        {categories.map((cat, idx) => (
+          <button
+            key={idx}
+            onClick={() => setExpandedCategory(expandedCategory === idx ? null : idx)}
+            className={`${cardCls} p-4 text-center cursor-pointer hover:opacity-90 transition-opacity`}
+          >
+            <p className={`text-2xl font-bold ${cat.score >= 80 ? 'text-orange-400' : cat.score >= 60 ? 'text-orange-400' : cat.score >= 40 ? 'text-yellow-400' : 'text-red-400'}`}>
+              {cat.score}
+            </p>
+            <p className={`text-xs mt-1 ${txtMuted}`}>{cat.name}</p>
+            {cat.risk_level === 'high' && <ShieldAlert className="w-4 h-4 text-red-400 mx-auto mt-1" />}
+            {cat.risk_level === 'medium' && <Shield className="w-4 h-4 text-yellow-400 mx-auto mt-1" />}
+            {cat.risk_level === 'low' && <ShieldCheck className="w-4 h-4 text-green-400 mx-auto mt-1" />}
+          </button>
         ))}
       </div>
 
-      <div className="space-y-2">
-        {Object.entries(categories).map(([key, cat]) => (
-          <div key={key} className="card">
-            <button onClick={() => setExpanded(p => ({ ...p, [key]: !p[key] }))} className="flex items-center justify-between w-full">
-              <div className="flex items-center gap-3">
-                {expanded[key] ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
-                <span className="text-white font-medium text-sm">{cat.name}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className={`text-lg font-bold ${scoreColor(cat.score)}`}>{cat.score}</span>
-                {cat.findings.length > 0 && (
-                  <span className="badge badge-high">{cat.findings.length}</span>
-                )}
-              </div>
-            </button>
-            {expanded[key] && cat.findings.length > 0 && (
-              <div className="mt-3 space-y-2 ml-6">
-                {cat.findings.map((f, i) => (
-                  <div key={i} className="p-3 bg-gray-800/50 rounded border-l-2 border-l-red-500">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={`badge ${severityColor(f.severity)}`}>{f.severity}</span>
-                      <span className="text-white text-sm font-medium">{f.title}</span>
+      {expandedCategory !== null && categories[expandedCategory] && (
+        <div className={`${cardCls} animate-slide-in`}>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className={`text-lg font-semibold ${txt}`}>
+              {categories[expandedCategory].name}
+              <span className={`ml-2 text-sm font-normal ${txtMuted}`}>
+                Score: {categories[expandedCategory].score}/100
+              </span>
+            </h3>
+            <span className={`badge ${categories[expandedCategory].risk_level === 'high' ? 'badge-critical' : categories[expandedCategory].risk_level === 'medium' ? 'badge-high' : 'badge-low'}`}>
+              {categories[expandedCategory].risk_level}
+            </span>
+          </div>
+          <p className={`text-sm mb-4 ${txtMuted}`}>{categories[expandedCategory].description}</p>
+          {categories[expandedCategory].findings?.length > 0 && (
+            <div className="space-y-2">
+              <h4 className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>Findings ({categories[expandedCategory].findings.length})</h4>
+              {categories[expandedCategory].findings.map((finding, i) => (
+                <div key={i} className={`flex items-start gap-3 p-3 rounded-lg ${darkMode ? 'bg-gray-800/50' : 'bg-orange-50'}`}>
+                  <ShieldAlert className={`w-4 h-4 mt-0.5 flex-shrink-0 ${finding.severity === 'HIGH' ? 'text-red-400' : finding.severity === 'MEDIUM' ? 'text-yellow-400' : 'text-orange-400'}`} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`text-sm font-medium ${txt}`}>{finding.title}</span>
+                      <span className={`badge ${severityColor(finding.severity)}`}>{finding.severity}</span>
                     </div>
-                    <p className="text-xs text-gray-400 mb-1">{f.description}</p>
-                    <p className="text-xs text-emerald-400">Fix: {f.remediation}</p>
+                    <p className={`text-xs mt-1 ${txtMuted}`}>{finding.description}</p>
+                    {finding.remediation && (
+                      <p className={`text-xs mt-1 ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>Fix: {finding.remediation}</p>
+                    )}
                   </div>
-                ))}
-              </div>
-            )}
-            {expanded[key] && cat.findings.length === 0 && (
-              <div className="mt-3 ml-6 text-sm text-emerald-400 flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4" /> No issues found in this category
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
