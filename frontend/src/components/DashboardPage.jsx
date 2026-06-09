@@ -29,7 +29,7 @@ function DashboardPage() {
     }
   }
 
-  if (loading) return <div className="flex items-center justify-center py-16"><Loader2 className="w-8 h-8 text-emerald-400 animate-spin" /></div>
+  if (loading) return <div className="flex items-center justify-center py-16"><Loader2 className="w-8 h-8 text-orange-400 animate-spin" /></div>
 
   if (!backendOk) {
     return (
@@ -39,7 +39,7 @@ function DashboardPage() {
         <p className="text-sm text-red-400 mb-4">{errorMsg}</p>
         <div className="bg-gray-900 rounded p-3 mb-4 text-left">
           <p className="text-xs text-gray-400 mb-1">Start the backend:</p>
-          <code className="text-xs text-emerald-400">cd backend && source venv/bin/activate && pip install -r requirements.txt && uvicorn main:app --reload</code>
+          <code className="text-xs text-orange-400">cd backend && source venv/bin/activate && pip install -r requirements.txt && uvicorn main:app --reload</code>
         </div>
         <button onClick={loadStats} className="btn-primary inline-flex items-center gap-2 text-sm">
           <RefreshCw className="w-4 h-4" /> Retry Connection
@@ -61,7 +61,7 @@ function DashboardPage() {
           <p className="text-sm text-gray-400">Total Scans</p>
         </div>
         <div className="card text-center">
-          <Shield className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
+          <Shield className="w-8 h-8 text-orange-400 mx-auto mb-2" />
           <p className="text-3xl font-bold text-white">{stats.average_score}</p>
           <p className="text-sm text-gray-400">Avg Score</p>
         </div>
@@ -100,7 +100,7 @@ function DashboardPage() {
                 <XAxis dataKey="url" tick={{ fontSize: 10 }} interval={0} angle={-30} textAnchor="end" height={60} />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="count" fill="#10b981" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="count" fill="#f97316" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : <p className="text-gray-500 text-center py-8">No scan data yet</p>}
