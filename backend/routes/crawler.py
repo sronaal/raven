@@ -17,6 +17,10 @@ from services.vulnerability_checker import check_vulnerabilities
 from services.ssl_analyzer import analyze_ssl
 from services.parameter_analyzer import analyze_parameters
 from services.port_scanner import scan_ports
+from services.dns_analyzer import enumerate_dns
+from services.email_security import check_email_security
+from services.mixed_content import check_mixed_content
+from services.security_txt import check_security_txt
 from utils.validators import validate_url, normalize_url
 
 router = APIRouter()
@@ -172,3 +176,76 @@ async def scan_ports_endpoint(request: Request):
     logger.info({"event": "port_scan", "hostname": hostname, "url": url})
     result = await scan_ports(hostname)
     return {"url": url, "hostname": hostname, "timestamp": datetime.now(timezone.utc).isoformat(), **result}
+
+
+@router.post("/scan/dns")
+async def scan_dns(request: Request):
+    body = await request.json()
+    url = body.get("url", "")
+    if not url:
+        raise HTTPException(status_code=400, detail="URL is required")
+    is_valid, message = validate_url(url)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=message)
+    parsed = urlparse(url)
+    hostname = parsed.hostname or url
+    if hostname.startswith("www."):
+        domain = hostname[4:]
+    else:
+        domain = hostname
+    logger.info({"event": "dns_enum", "domain": domain, "url": url})
+    result = await enumerate_dns(domain)
+    return {"url": url, "timestamp": datetime.now(timezone.utc).isoformat(), **result}
+
+
+@router.post("/scan/email-security")
+async def scan_email_security(request: Request):
+    body = await request.json()
+    url = body.get("url", "")
+    if not url:
+        raise HTTPException(status_code=400, detail="URL is required")
+    is_valid, message = validate_url(url)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=message)
+    parsed = urlparse(url)
+    hostname = parsed.hostname or url
+    if hostname.startswith("www."):
+        domain = hostname[4:]
+    else:
+        domain = hostname
+    logger.info({"event": "email_security", "domain": domain, "url": url})
+    result = await check_email_security(domain)
+    return {"url": url, "domain": domain, "timestamp": datetime.now(timezone.utc).isoformat(), **result}
+
+
+@router.post("/scan/mixed-content")
+async def scan_mixed_content(request: Request):
+    body = await request.json()
+    url = body.get("url", "")
+    if not url:
+        raise HTTPException(status_code=400, detail="URL is required")
+    is_valid, message = validate_url(url)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=message)
+    url = normalize_url(url)
+    fetch_result = await fetch_url(url)
+    if "error" in fetch_result:
+        raise HTTPException(status_code=502, detail=fetch_result["error"])
+    body_content = fetch_result.get("body", "")
+    result = check_mixed_content(url, body_content)
+    return {"url": url, "timestamp": datetime.now(timezone.utc).isoformat(), **result}
+
+
+@router.post("/scan/security-txt")
+async def scan_security_txt(request: Request):
+    body = await request.json()
+    url = body.get("url", "")
+    if not url:
+        raise HTTPException(status_code=400, detail="URL is required")
+    is_valid, message = validate_url(url)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=message)
+    url = normalize_url(url)
+    logger.info({"event": "security_txt", "url": url})
+    result = await check_security_txt(url)
+    return {"url": url, "timestamp": datetime.now(timezone.utc).isoformat(), **result}
