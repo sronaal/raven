@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Request
 from datetime import datetime, timezone
 import logging
 
+from services.cache import get_or_compute_async
 from services.crawler import crawl_site
 from services.owasp_checker import check_owasp_top10
 from services.api_discovery import discover_apis
@@ -42,7 +43,8 @@ async def crawl(request: Request):
 
     logger.info({"event": "crawl_started", "url": url, "max_depth": max_depth, "max_pages": max_pages})
 
-    result = await crawl_site(url, max_depth=max_depth, max_pages=max_pages)
+    cache_key = f"crawl:{url}:{max_depth}:{max_pages}"
+    result = await get_or_compute_async(cache_key, 300, lambda: crawl_site(url, max_depth=max_depth, max_pages=max_pages))
     return {"timestamp": datetime.now(timezone.utc).isoformat(), **result}
 
 
@@ -60,20 +62,21 @@ async def scan_owasp(request: Request):
     url = normalize_url(url)
     logger.info({"event": "owasp_scan", "url": url})
 
-    fetch_result = await fetch_url(url)
-    if "error" in fetch_result:
-        raise HTTPException(status_code=502, detail=fetch_result["error"])
+    async def compute_owasp():
+        fetch_result = await fetch_url(url)
+        if "error" in fetch_result:
+            raise HTTPException(status_code=502, detail=fetch_result["error"])
+        headers = fetch_result.get("headers", {})
+        body_content = fetch_result.get("body", "")
+        header_analysis = analyze_headers(headers)
+        technologies = detect_technologies(headers, body_content)
+        vulnerabilities = check_vulnerabilities(technologies)
+        ssl_analysis = await analyze_ssl(url)
+        parameter_analysis = analyze_parameters(url, headers, body_content)
+        return check_owasp_top10(headers, body_content, url, technologies, vulnerabilities, ssl_analysis, parameter_analysis)
 
-    headers = fetch_result.get("headers", {})
-    body_content = fetch_result.get("body", "")
-
-    header_analysis = analyze_headers(headers)
-    technologies = detect_technologies(headers, body_content)
-    vulnerabilities = check_vulnerabilities(technologies)
-    ssl_analysis = await analyze_ssl(url)
-    parameter_analysis = analyze_parameters(url, headers, body_content)
-
-    result = check_owasp_top10(headers, body_content, url, technologies, vulnerabilities, ssl_analysis, parameter_analysis)
+    cache_key = f"owasp:{url}"
+    result = await get_or_compute_async(cache_key, 300, compute_owasp)
     return {"url": url, "timestamp": datetime.now(timezone.utc).isoformat(), **result}
 
 
