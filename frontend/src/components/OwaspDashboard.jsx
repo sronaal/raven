@@ -17,7 +17,25 @@ function OwaspDashboard({ data, darkMode }) {
 
   if (!data) return null
 
-  const categories = data.categories || []
+  const categoriesObj = data.categories || {}
+  const CATEGORY_DESCRIPTIONS = {
+    A01_broken_access_control: 'Checks for broken access control: CORS, admin panels, sensitive files',
+    A02_cryptographic_failures: 'Evaluates crypto: HSTS, SSL/TLS strength, secure ciphers',
+    A03_injection: 'Checks injection risks: SQLi, XSS, path traversal in parameters',
+    A04_insecure_design: 'Evaluates design: CSP, security headers, open redirects',
+    A05_security_misconfiguration: 'Checks misconfigurations: info disclosure, server headers',
+    A06_vulnerable_components: 'Scans for known vulnerable libraries and CVEs',
+    A07_auth_failures: 'Evaluates authentication: CSRF tokens, session security',
+    A08_data_integrity: 'Checks data integrity: SRI hashes, HTTPS enforcement',
+    A09_logging_failures: 'Checks logging: error messages, stack traces in response',
+    A10_ssrf: 'Evaluates SSRF risks in URL parameters and redirects',
+  }
+  const categories = Object.entries(categoriesObj).map(([key, val]) => ({
+    key,
+    ...val,
+    risk_level: val.score >= 70 ? 'low' : val.score >= 40 ? 'medium' : 'high',
+    description: val.description || CATEGORY_DESCRIPTIONS[key] || '',
+  }))
   const overallScore = data.overall_score || 0
   const cardCls = darkMode ? 'card' : 'card-light'
   const txt = darkMode ? 'text-white' : 'text-gray-900'
