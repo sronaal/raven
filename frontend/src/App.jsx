@@ -11,13 +11,18 @@ import { scanFull, scanLevel, crawlSite, scanOwasp, scanCompliance } from './uti
 const MAX_HISTORY = 10
 const LS_OPTIONS = 'raven:options'
 const LS_PREFIX = 'raven:'
+const LS_LAST_SCAN = 'raven:last'
 
 function App() {
-  const [url, setUrl] = useState('')
+  const [url, setUrl] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(LS_LAST_SCAN))?.url || '' } catch { return '' }
+  })
   const [loading, setLoading] = useState(false)
   const [progress, setProgress] = useState(0)
   const [progressStatus, setProgressStatus] = useState('')
-  const [results, setResults] = useState(null)
+  const [results, setResults] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(LS_LAST_SCAN))?.results || null } catch { return null }
+  })
   const [error, setError] = useState(null)
   const [showDisclaimer, setShowDisclaimer] = useState(true)
   const [scanHistory, setScanHistory] = useState(() => {
@@ -30,9 +35,15 @@ function App() {
   })
   const [page, setPage] = useState('scanner')
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') !== 'light')
-  const [crawlerData, setCrawlerData] = useState(null)
-  const [owaspData, setOwaspData] = useState(null)
-  const [complianceData, setComplianceData] = useState(null)
+  const [crawlerData, setCrawlerData] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(LS_LAST_SCAN))?.crawlerData || null } catch { return null }
+  })
+  const [owaspData, setOwaspData] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(LS_LAST_SCAN))?.owaspData || null } catch { return null }
+  })
+  const [complianceData, setComplianceData] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(LS_LAST_SCAN))?.complianceData || null } catch { return null }
+  })
   const [toolLoading, setToolLoading] = useState(false)
   const [enableCrawler, setEnableCrawler] = useState(() => {
     try { return JSON.parse(localStorage.getItem(LS_OPTIONS))?.crawler ?? true } catch { return true }
@@ -69,6 +80,18 @@ function App() {
     } catch {}
   }
 
+  const saveLastScan = (scanUrl, scanResults, crawler, owasp) => {
+    try {
+      localStorage.setItem(LS_LAST_SCAN, JSON.stringify({
+        url: scanUrl,
+        results: scanResults,
+        crawlerData: crawler,
+        owaspData: owasp,
+        timestamp: new Date().toISOString(),
+      }))
+    } catch {}
+  }
+
   const handleScan = async (scanUrl, level = 'full') => {
     setLoading(true)
     setError(null)
@@ -96,6 +119,7 @@ function App() {
         setOwaspData(owaspResult)
 
         saveCacheToLS(scanUrl, { crawler: crawlerResult, owasp: owaspResult })
+        saveLastScan(scanUrl, scanResult, crawlerResult, owaspResult)
 
         const newHistory = [
           { url: scanUrl, timestamp: new Date().toISOString(), score: scanResult.resumen_general?.total_score },
@@ -110,6 +134,7 @@ function App() {
         setProgress(100)
         setProgressStatus('Scan complete')
         setResults(data)
+        saveLastScan(scanUrl, data, null, null)
       }
     } catch (err) {
       setError(err.response?.data?.detail || err.message || 'Scan failed')
