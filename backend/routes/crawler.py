@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Request
 from datetime import datetime, timezone
 import logging
+from urllib.parse import urlparse
 
 from services.cache import get_or_compute_async
 from services.crawler import crawl_site
@@ -15,6 +16,7 @@ from services.tech_detector import detect_technologies
 from services.vulnerability_checker import check_vulnerabilities
 from services.ssl_analyzer import analyze_ssl
 from services.parameter_analyzer import analyze_parameters
+from services.port_scanner import scan_ports
 from utils.validators import validate_url, normalize_url
 
 router = APIRouter()
@@ -154,3 +156,19 @@ async def surface(request: Request):
     parameter_analysis = analyze_parameters(url, headers, body_content)
     result = map_attack_surface(url, [], {}, {}, technologies, vulnerabilities, header_analysis, ssl_analysis)
     return {"url": url, "timestamp": datetime.now(timezone.utc).isoformat(), **result}
+
+
+@router.post("/scan/ports")
+async def scan_ports_endpoint(request: Request):
+    body = await request.json()
+    url = body.get("url", "")
+    if not url:
+        raise HTTPException(status_code=400, detail="URL is required")
+    is_valid, message = validate_url(url)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=message)
+    parsed = urlparse(url)
+    hostname = parsed.hostname or url
+    logger.info({"event": "port_scan", "hostname": hostname, "url": url})
+    result = await scan_ports(hostname)
+    return {"url": url, "hostname": hostname, "timestamp": datetime.now(timezone.utc).isoformat(), **result}

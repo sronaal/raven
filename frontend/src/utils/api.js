@@ -111,3 +111,28 @@ export async function scanSurface(url) {
   const response = await api.post('/surface', { url })
   return response.data
 }
+
+export async function scanPorts(url) {
+  const response = await api.post('/scan/ports', { url })
+  return response.data
+}
+
+export async function scanDns(url) {
+  const response = await api.post('/scan/dns', { url })
+  return response.data
+}
+
+export async function scanEmailSecurity(url) {
+  const response = await api.post('/scan/email-security', { url })
+  return response.data
+}
+
+export async function scanMixedContent(url) {
+  const response = await api.post('/scan/mixed-content', { url })
+  return response.data
+}
+
+export async function scanSecurityTxt(url) {
+  const response = await api.post('/scan/security-txt', { url })
+  return response.data
+}
