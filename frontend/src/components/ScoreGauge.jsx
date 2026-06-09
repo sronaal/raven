@@ -1,13 +1,13 @@
-function ScoreGauge({ score, size = 160, label = 'Security Score' }) {
+function ScoreGauge({ score, size = 160, label = 'Security Score', darkMode }) {
   const radius = (size - 16) / 2
   const circumference = 2 * Math.PI * radius
   const offset = circumference - (score / 100) * circumference
 
   const getColor = (s) => {
-    if (s >= 80) return '#10b981'
-    if (s >= 60) return '#22c55e'
-    if (s >= 40) return '#eab308'
-    if (s >= 20) return '#f97316'
+    if (s >= 80) return '#f97316'
+    if (s >= 60) return '#fb923c'
+    if (s >= 40) return '#fbbf24'
+    if (s >= 20) return '#f59e0b'
     return '#ef4444'
   }
 
@@ -20,14 +20,14 @@ function ScoreGauge({ score, size = 160, label = 'Security Score' }) {
   }
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center relative">
       <svg width={size} height={size} className="transform -rotate-90">
         <circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#374151"
+          stroke={darkMode ? '#374151' : '#e5e7eb'}
           strokeWidth="12"
         />
         <circle
@@ -47,9 +47,9 @@ function ScoreGauge({ score, size = 160, label = 'Security Score' }) {
         <span className="text-4xl font-bold" style={{ color: getColor(score) }}>
           {score}
         </span>
-        <span className="text-sm text-gray-400 mt-1">{getLabel(score)}</span>
+        <span className={`text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{getLabel(score)}</span>
       </div>
-      {label && <span className="text-xs text-gray-500 mt-2">{label}</span>}
+      {label && <span className={`text-xs mt-2 ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>{label}</span>}
     </div>
   )
 }
