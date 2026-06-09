@@ -150,6 +150,10 @@ def _check_a05(headers: dict, body: str, url: str) -> dict:
         if k.lower() == "x-powered-by":
             findings.append({"severity": "LOW", "title": "X-Powered-By header exposes technology", "description": f"Technology revealed: {headers[k]}", "remediation": "Remove X-Powered-By header"})
 
+    xpcdp_found = any(k.lower() == "x-permitted-cross-domain-policies" for k in headers)
+    if not xpcdp_found:
+        findings.append({"severity": "LOW", "title": "Missing X-Permitted-Cross-Domain-Policies", "description": "Missing X-Permitted-Cross-Domain-Policies header may allow cross-domain file access in older Adobe products", "remediation": "Add X-Permitted-Cross-Domain-Policies: none header"})
+
     for pattern in DEBUG_PATTERNS:
         if pattern.lower() in body.lower():
             findings.append({"severity": "HIGH", "title": "Debug/error information exposed", "description": "Page content contains debug or error details", "remediation": "Disable debug mode in production and use generic error pages"})

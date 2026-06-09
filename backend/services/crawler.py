@@ -46,6 +46,8 @@ async def crawl_site(url: str, max_depth: int = 3, max_pages: int = 50, delay: f
     forms = []
     js_urls = []
     api_endpoints = []
+    json_lds = []
+    data_attributes = []
     errors = []
     pages_crawled = 0
 
@@ -93,6 +95,23 @@ async def crawl_site(url: str, max_depth: int = 3, max_pages: int = 50, delay: f
 
                 if resp.status_code in (200, 301, 302):
                     soup = BeautifulSoup(resp.text, "html.parser")
+
+                    for script_ld in soup.find_all("script", type="application/ld+json"):
+                        if script_ld.string:
+                            json_lds.append({
+                                "content": script_ld.string.strip()[:500],
+                                "found_on": defragged,
+                            })
+
+                    for tag in soup.find_all(attrs={"data-": True}):
+                        for attr in list(tag.attrs):
+                            if attr.startswith("data-"):
+                                data_attributes.append({
+                                    "tag": tag.name,
+                                    "attribute": attr,
+                                    "value": tag[attr][:200],
+                                    "found_on": defragged,
+                                })
 
                     for a in soup.find_all("a", href=True):
                         href = a["href"].strip()
@@ -159,10 +178,14 @@ async def crawl_site(url: str, max_depth: int = 3, max_pages: int = 50, delay: f
         "api_endpoints": len(api_endpoints),
         "forms_found": len(forms),
         "js_files": len(js_urls),
+        "json_ld_found": len(json_lds),
+        "data_attributes_found": len(data_attributes),
         "endpoints": endpoints,
         "api_endpoints": api_endpoints,
         "forms": forms,
         "js_files": js_urls[:100],
+        "json_ld": json_lds[:20],
+        "data_attributes": data_attributes[:50],
         "errors": errors[:20],
         "summary": {
             "200": sum(1 for e in endpoints if e["status_code"] == 200),

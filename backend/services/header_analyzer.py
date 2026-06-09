@@ -148,13 +148,71 @@ def evaluate_security_header_value(name: str, value: str) -> dict:
             return {"status": "warning", "message": f"max-age={age}s is too short (min 31536000)"}
         return {"status": "warning", "message": "No max-age directive found"}
     if name_lower == "content-security-policy":
-        if "unsafe-inline" in value.lower():
-            return {"status": "warning", "message": "Uses unsafe-inline, reduces XSS protection"}
-        if "unsafe-eval" in value.lower():
-            return {"status": "warning", "message": "Uses unsafe-eval, reduces XSS protection"}
-        if "*" in value and "default-src" in value.lower():
-            return {"status": "warning", "message": "Wildcard in default-src weakens CSP"}
-        return {"status": "good", "message": "CSP configured"}
+        csp_lower = value.lower()
+        issues = []
+        good = []
+
+        if "unsafe-inline" in csp_lower:
+            issues.append("Uses unsafe-inline, reduces XSS protection")
+        if "unsafe-eval" in csp_lower:
+            issues.append("Uses unsafe-eval, reduces XSS protection")
+
+        if "object-src" not in csp_lower and "default-src" not in csp_lower:
+            issues.append("Missing object-src directive, allows plugin content")
+        elif "object-src" in csp_lower and "'none'" not in csp_lower.split("object-src")[1].split(";")[0].strip() if "object-src" in csp_lower else True:
+            if "object-src" in csp_lower:
+                obj_val = csp_lower.split("object-src")[1].split(";")[0].strip()
+                if "'none'" not in obj_val and "none" not in obj_val:
+                    issues.append(f"object-src should be 'none' to prevent plugin abuse, got: {obj_val}")
+
+        if "base-uri" not in csp_lower:
+            issues.append("Missing base-uri directive, allows base tag injection")
+        elif "'none'" not in csp_lower.split("base-uri")[1].split(";")[0].strip() if "base-uri" in csp_lower else True:
+            base_val = csp_lower.split("base-uri")[1].split(";")[0].strip() if "base-uri" in csp_lower else ""
+            if base_val and "'self'" not in base_val and "'none'" not in base_val:
+                if base_val != "":
+                    issues.append(f"base-uri should be 'self' or 'none', got: {base_val}")
+
+        if "frame-ancestors" not in csp_lower:
+            issues.append("Missing frame-ancestors directive, allows framing")
+        else:
+            fa_val = csp_lower.split("frame-ancestors")[1].split(";")[0].strip() if "frame-ancestors" in csp_lower else ""
+            if "'none'" in fa_val:
+                good.append("frame-ancestors 'none' prevents clickjacking")
+
+        if "form-action" not in csp_lower:
+            issues.append("Missing form-action directive")
+
+        if "upgrade-insecure-requests" in csp_lower:
+            good.append("Has upgrade-insecure-requests (mixed content protection)")
+
+        if "block-all-mixed-content" in csp_lower:
+            good.append("Has block-all-mixed-content")
+
+        if "strict-dynamic" in csp_lower:
+            good.append("Uses strict-dynamic (modern CSP approach)")
+
+        if "*" in csp_lower and "default-src" in csp_lower:
+            def_src_idx = csp_lower.index("default-src")
+            def_src_end = csp_lower.index(";", def_src_idx) if ";" in csp_lower[def_src_idx:] else len(csp_lower)
+            def_src_val = csp_lower[def_src_idx:def_src_end]
+            if "*" in def_src_val:
+                issues.append("Wildcard in default-src weakens CSP")
+
+        for jsonp_provider in ["googleapis.com/", "gstatic.com/", "cdnjs.cloudflare.com/ajax/libs/", "ajax.googleapis.com/"]:
+            if jsonp_provider in csp_lower:
+                csp_script_idx = csp_lower.find("script-src")
+                if csp_script_idx >= 0:
+                    script_src_end = csp_lower.index(";", csp_script_idx) if ";" in csp_lower[csp_script_idx:] else len(csp_lower)
+                    script_src_val = csp_lower[csp_script_idx:script_src_end]
+                    if jsonp_provider in script_src_val.split("script-src")[1] if "script-src" in script_src_val else "":
+                        issues.append(f"Script-src allows {jsonp_provider} which has known JSONP-based CSP bypasses")
+
+        if issues and good:
+            return {"status": "mixed", "message": "Mixed: " + "; ".join(issues[:3]), "issues": issues, "good": good}
+        if issues:
+            return {"status": "warning", "message": "CSP issues: " + "; ".join(issues[:3]), "issues": issues, "good": good}
+        return {"status": "good", "message": "Well-configured CSP", "issues": [], "good": good}
     if name_lower == "x-content-type-options":
         if value.lower() == "nosniff":
             return {"status": "good", "message": "Properly configured"}
