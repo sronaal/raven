@@ -6,13 +6,13 @@ logger = logging.getLogger(__name__)
 
 def check_compliance(headers: dict, body: str, ssl_analysis: dict, url: str) -> dict:
     return {
-        "gdpr": _check_gdpr(headers, body),
+        "gdpr": _check_gdpr(headers, body, url),
         "pci_dss": _check_pci_dss(headers, ssl_analysis),
         "hipaa": _check_hipaa(headers, ssl_analysis, body),
     }
 
 
-def _check_gdpr(headers: dict, body: str) -> dict:
+def _check_gdpr(headers: dict, body: str, url: str) -> dict:
     checks = []
     body_lower = body.lower()
 
@@ -25,7 +25,7 @@ def _check_gdpr(headers: dict, body: str) -> dict:
     has_data_collection = any(p in body_lower for p in ["newsletter", "subscribe", "sign up", "register", "create account"])
     checks.append({"requirement": "Data Collection Disclosure", "passed": not has_data_collection or has_privacy_policy, "detail": "Data collection forms present with privacy policy" if has_data_collection and has_privacy_policy else "Data collection without visible privacy policy" if has_data_collection else "No data collection forms detected"})
 
-    https = url_startswith_https(headers)
+    https = url_startswith_https(url)
     checks.append({"requirement": "HTTPS for Data Transmission", "passed": https, "detail": "Site uses HTTPS" if https else "Site does not use HTTPS"})
 
     passed = sum(1 for c in checks if c["passed"])
