@@ -47,9 +47,9 @@ function DependencyReport({ data, darkMode }) {
                     <span className="badge badge-safe">Safe</span>
                   )}
                 </div>
-                {dep.cves?.length > 0 && (
+                {dep.cves || dep.vulnerabilities?.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-2">
-                    {dep.cves.map((cve, i) => (
+                    {(dep.cves || dep.vulnerabilities || []).map((cve, i) => (
                       <span key={i} className={`text-xs px-1.5 py-0.5 rounded ${darkMode ? 'bg-red-950/50 text-red-300' : 'bg-red-50 text-red-700'}`}>{cve}</span>
                     ))}
                   </div>

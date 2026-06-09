@@ -1,4 +1,5 @@
 import logging
+from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
 
@@ -77,5 +78,6 @@ def _check_hipaa(headers: dict, ssl_analysis: dict, body: str) -> dict:
     return {"score": round(passed / len(checks) * 100), "passed": passed, "total": len(checks), "checks": checks}
 
 
-def url_startswith_https(headers):
-    return True
+def url_startswith_https(url):
+    parsed = urlparse(url)
+    return parsed.scheme == "https"

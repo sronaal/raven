@@ -35,7 +35,7 @@ def validate_resolved_ip(hostname: str, resolved_url: str) -> tuple[bool, str]:
         for range_str in BLOCKED_IP_RANGES:
             if ip_obj in ipaddress.ip_network(range_str):
                 return False, f"Resolved IP {ip} is in blocked range (DNS rebinding protection)"
-        if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_reserved:
+        if getattr(ip_obj, 'is_private', False) or getattr(ip_obj, 'is_loopback', False) or getattr(ip_obj, 'is_reserved', False):
             return False, f"Resolved IP {ip} is private/loopback/reserved (DNS rebinding protection)"
         return True, ""
     except Exception:
@@ -49,7 +49,7 @@ def is_private_ip(hostname: str) -> bool:
         for range_str in BLOCKED_IP_RANGES:
             if ip_obj in ipaddress.ip_network(range_str):
                 return True
-        return ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_reserved
+        return getattr(ip_obj, 'is_private', False) or getattr(ip_obj, 'is_loopback', False) or getattr(ip_obj, 'is_reserved', False)
     except Exception:
         return False
 

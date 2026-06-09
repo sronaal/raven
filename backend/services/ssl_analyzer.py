@@ -2,6 +2,7 @@ import ssl
 import socket
 import datetime
 import logging
+import asyncio
 from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
@@ -23,31 +24,36 @@ async def analyze_ssl(url: str) -> dict:
         }
 
     try:
-        context = ssl.create_default_context()
-        with socket.create_connection((hostname, port), timeout=10) as sock:
-            with context.wrap_socket(sock, server_hostname=hostname) as ssock:
-                cert = ssock.getpeercert()
-                protocol = get_protocol_version(ssock.version())
-                cipher = ssock.cipher()
-
-                return {
-                    "available": True,
-                    "protocol": protocol,
-                    "protocol_state": evaluate_protocol(protocol),
-                    "cipher": {
-                        "name": cipher[0],
-                        "protocol": cipher[1],
-                        "bits": cipher[2],
-                    },
-                    "certificate": parse_certificate(cert),
-                    "state": evaluate_ssl_state(cert, protocol),
-                }
+        loop = asyncio.get_running_loop()
+        result = await loop.run_in_executor(None, _ssl_handshake, hostname, port)
+        return result
     except ssl.SSLError as e:
         return {"available": False, "state": "ssl_error", "message": str(e)}
     except socket.timeout:
         return {"available": False, "state": "timeout", "message": "Connection timed out"}
     except Exception as e:
         return {"available": False, "state": "error", "message": str(e)}
+
+
+def _ssl_handshake(hostname, port):
+    context = ssl.create_default_context()
+    with socket.create_connection((hostname, port), timeout=10) as sock:
+        with context.wrap_socket(sock, server_hostname=hostname) as ssock:
+            cert = ssock.getpeercert()
+            protocol = get_protocol_version(ssock.version())
+            cipher = ssock.cipher()
+            return {
+                "available": True,
+                "protocol": protocol,
+                "protocol_state": evaluate_protocol(protocol),
+                "cipher": {
+                    "name": cipher[0],
+                    "protocol": cipher[1],
+                    "bits": cipher[2],
+                },
+                "certificate": parse_certificate(cert),
+                "state": evaluate_ssl_state(cert, protocol),
+            }
 
 def get_protocol_version(version: str) -> str:
     return version

@@ -74,7 +74,7 @@ function AttackSurfaceGraph({ data, darkMode }) {
         ))}
       </div>
 
-      {stats.risk_summary?.length > 0 && filtered.length === 0 && (
+      {filtered.length === 0 && (
         <div className={`${cardCls} text-center py-8`}>
           <ShieldCheck className="w-10 h-10 text-emerald-400 mx-auto mb-3" />
           <p className={`font-medium ${txt}`}>No {riskFilter.toLowerCase()} risk nodes</p>
