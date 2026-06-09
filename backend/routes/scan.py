@@ -12,7 +12,8 @@ from utils.validators import validate_url, normalize_url, validate_resolved_ip
 from services.http_fetcher import fetch_url
 from services.header_analyzer import analyze_headers
 from services.tech_detector import detect_technologies
-from services.vulnerability_checker import check_vulnerabilities, calculate_vulnerability_score, fetch_external_cves
+from services.vulnerability_checker import check_vulnerabilities, calculate_vulnerability_score, fetch_external_cves, check_body_vulnerabilities
+from services.js_sink_analyzer import analyze_js_sinks
 from services.ssl_analyzer import analyze_ssl
 from services.parameter_analyzer import analyze_parameters
 from services.scan_store import save_scan
@@ -124,13 +125,15 @@ async def scan_level2(request: Request):
 
     technologies = detect_technologies(headers, body_content)
     vulnerabilities = check_vulnerabilities(technologies)
+    body_vulns = check_body_vulnerabilities(body_content, headers)
+    js_sinks = analyze_js_sinks(body_content)
 
     external_cves = []
     for tech in technologies[:3]:
         ext = await fetch_external_cves(tech["name"], tech.get("version", ""))
         external_cves.extend(ext)
 
-    unique_vulnerabilities = deduplicate_vulnerabilities(vulnerabilities + external_cves)
+    unique_vulnerabilities = deduplicate_vulnerabilities(vulnerabilities + external_cves + body_vulns)
     ssl_analysis = await analyze_ssl(url)
 
     hsts_found = any(k.lower() == "strict-transport-security" for k in headers)
@@ -146,6 +149,7 @@ async def scan_level2(request: Request):
         "hsts_enabled": hsts_found,
         "waf_detected": waf_detected,
         "vulnerability_score": vuln_score,
+        "js_sinks": js_sinks,
     }
     client_ip_str = request.client.host if request.client else ""
     result["scan_id"] = save_scan(url, result["timestamp"], "level2", {"nivel2": result, "resumen_general": {"total_score": vuln_score}}, client_ip_str)
@@ -201,6 +205,9 @@ async def scan_full(request: Request):
 
     await emit_progress(client_ip_str, "checking_cves", 50, "Checking vulnerabilities...")
     vulnerabilities = check_vulnerabilities(technologies)
+    body_vulns = check_body_vulnerabilities(body_content, headers)
+    js_sinks = analyze_js_sinks(body_content)
+    all_vulnerabilities = vulnerabilities + body_vulns
 
     await emit_progress(client_ip_str, "analyzing_ssl", 70, "Analyzing SSL/TLS...")
     ssl_analysis = await analyze_ssl(url)
@@ -209,14 +216,20 @@ async def scan_full(request: Request):
     parameter_analysis = analyze_parameters(url, headers, body_content)
 
     server_info = extract_server_info(technologies)
-    vuln_score = calculate_vulnerability_score(vulnerabilities)
+    vuln_score = calculate_vulnerability_score(all_vulnerabilities)
 
     score1 = header_analysis["score"]
     score2 = vuln_score
     score3 = parameter_analysis["score"]
     total_score = int(score1 * 0.3 + score2 * 0.4 + score3 * 0.3)
 
-    recommendations = generate_recommendations(header_analysis, vulnerabilities, parameter_analysis)
+    recommendations = generate_recommendations(header_analysis, all_vulnerabilities, parameter_analysis)
+
+    if js_sinks.get("risk") in ("critical", "high"):
+        recommendations.append(f"Fix {js_sinks['total']} dangerous JavaScript sinks found in page content ({js_sinks['risk']} risk)")
+    if body_vulns:
+        for bv in body_vulns[:3]:
+            recommendations.append(f"{bv['title']}: {bv['solution']}")
 
     result = {
         "url": url,
@@ -229,9 +242,11 @@ async def scan_full(request: Request):
             "security_score": score1,
         },
         "nivel2": {
-            "vulnerabilities": vulnerabilities,
+            "vulnerabilities": all_vulnerabilities,
             "ssl_tls": ssl_analysis,
-            "vulnerability_score": score2,
+            "vulnerability_score": vuln_score,
+            "body_vulnerabilities": body_vulns,
+            "js_sinks": js_sinks,
         },
         "nivel3": {
             "parameters": parameter_analysis["parameters"],
