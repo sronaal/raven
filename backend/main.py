@@ -17,9 +17,9 @@ from services.scan_store import init_db
 init_db()
 
 app = FastAPI(
-    title="URL Security Scanner",
-    description="Multi-level web URL security analysis tool",
-    version="1.0.0",
+    title="Raven API",
+    description="Passive Web Security Scanner & Attack Surface Analyzer",
+    version="2.0.0",
 )
 
 app.state.limiter = limiter
