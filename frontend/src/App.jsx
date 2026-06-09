@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Shield, AlertTriangle, Lock, Search, History, LayoutDashboard, BarChart3, Sun, Moon, Spider, Globe, Network, Package, FileCheck } from 'lucide-react'
+import { Shield, AlertTriangle, Lock, Search, History, LayoutDashboard, BarChart3, Sun, Moon, Bot, Globe, Network, Package, FileCheck } from 'lucide-react'
 import URLInput from './components/URLInput'
 import Disclaimer from './components/Disclaimer'
 import ProgressBar from './components/ProgressBar'
@@ -143,7 +143,7 @@ function App() {
                 <History className="w-3.5 h-3.5 inline mr-1" />History
               </button>
               <button onClick={() => handleToolScan('crawler')} disabled={toolLoading || !url.trim()} className={`px-2 py-1.5 rounded-lg text-xs transition-colors whitespace-nowrap ${page === 'crawler' ? 'bg-emerald-600/20 text-emerald-400' : 'text-gray-400 hover:text-white'} disabled:opacity-50`}>
-                <Spider className="w-3.5 h-3.5 inline mr-1" />Crawler
+                <Bot className="w-3.5 h-3.5 inline mr-1" />Crawler
               </button>
               <button onClick={() => handleToolScan('owasp')} disabled={toolLoading || !url.trim()} className={`px-2 py-1.5 rounded-lg text-xs transition-colors whitespace-nowrap ${page === 'owasp' ? 'bg-emerald-600/20 text-emerald-400' : 'text-gray-400 hover:text-white'} disabled:opacity-50`}>
                 <Shield className="w-3.5 h-3.5 inline mr-1" />OWASP
