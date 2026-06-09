@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search, ChevronRight, ChevronDown, Globe, Code, Form, FileText, AlertTriangle, Loader2 } from 'lucide-react'
+import { Search, ChevronRight, ChevronDown, Globe, Code, FormInput, FileText, AlertTriangle, Loader2 } from 'lucide-react'
 
 function typeIcon(type) {
   switch (type) {
@@ -57,7 +57,7 @@ function CrawlerResults({ data }) {
           <p className="text-xs text-gray-400">API Endpoints</p>
         </div>
         <div className="card text-center">
-          <Form className="w-6 h-6 text-yellow-400 mx-auto mb-1" />
+          <FormInput className="w-6 h-6 text-yellow-400 mx-auto mb-1" />
           <p className="text-2xl font-bold text-white">{data.forms_found}</p>
           <p className="text-xs text-gray-400">Forms Found</p>
         </div>
@@ -119,7 +119,7 @@ function CrawlerResults({ data }) {
 
       {forms.length > 0 && (
         <div className="card">
-          <h3 className="text-white font-medium mb-3 flex items-center gap-2"><Form className="w-4 h-4 text-yellow-400" /> Forms ({forms.length})</h3>
+          <h3 className="text-white font-medium mb-3 flex items-center gap-2"><FormInput className="w-4 h-4 text-yellow-400" /> Forms ({forms.length})</h3>
           <div className="space-y-2">
             {forms.map((f, i) => (
               <div key={i} className="p-3 bg-gray-800/50 rounded text-sm">
