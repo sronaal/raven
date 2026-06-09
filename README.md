@@ -63,19 +63,24 @@ The frontend proxies `/api` requests to the backend at `http://localhost:8000` (
 - Rate limiting detection
 
 ### Additional Modules
-- **Crawler** — recursive site crawling with depth/page limits
-- **OWASP Top 10** — automated OWASP risk assessment
+- **Crawler** — recursive site crawling with depth/page limits, JSON-LD extraction, data-* attribute discovery
+- **OWASP Top 10** — automated OWASP 2021 risk assessment
 - **API Discovery** — endpoint enumeration from HTML/JS
 - **Dependency Checker** — known vulnerable library detection
 - **Attack Surface Mapping** — consolidated risk visualization
 - **Compliance Checker** — PCI-DSS, GDPR, HIPAA readiness
 - **Redirect Chain Analysis** — full redirect path tracing
-- **Subdomain Enumeration** — passive subdomain discovery
+- **Subdomain Enumeration** — passive subdomain discovery via crt.sh
 - **Robots.txt & Sitemap** — policy and sitemap extraction
 - **Cookie Analysis** — security attributes per cookie
+- **Port Scanner** — TCP connect scan of 300+ common ports with service identification
+- **DNS Enumeration** — A, AAAA, CNAME, MX, NS, TXT, SOA record resolution
+- **Email Security** — SPF, DKIM (multi-selector), DMARC policy analysis with scoring
+- **Mixed Content Detection** — HTTPS page loading HTTP resources (img, script, iframe, fetch, etc.)
+- **Security.txt Check** — fetch and validate /.well-known/security.txt per RFC 9116
 - **Batch Scan** — scan up to 20 URLs in parallel
 - **History & Comparison** — scan persistence, diff between scans
-- **PDF Report** — export scan results as PDF
+- **PDF Report** — export scan results as PDF with scores, vulns, missing headers, cookies, and compliance
 
 ## Scoring
 
@@ -139,6 +144,11 @@ Copy `.env.example` to `.env` and adjust:
 | `POST` | `/api/scan/batch` | Batch scan (up to 20 URLs) |
 | `POST` | `/api/scan/cookies` | Cookie security analysis |
 | `POST` | `/api/scan/grade` | Mozilla Observatory grading |
+| `POST` | `/api/scan/ports` | TCP port scan (300+ ports) |
+| `POST` | `/api/scan/dns` | DNS record enumeration |
+| `POST` | `/api/scan/email-security` | SPF/DKIM/DMARC email security |
+| `POST` | `/api/scan/mixed-content` | Mixed content (HTTP on HTTPS) |
+| `POST` | `/api/scan/security-txt` | RFC 9116 security.txt check |
 
 ### Crawler & Extended
 
